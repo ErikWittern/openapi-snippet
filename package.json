@@ -1,0 +1,19 @@
+{
+  "name": "swagger-snippet",
+  "version": "1.0.0",
+  "description": "Generates code snippets for given Swagger / Open API Specification files",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/test.js | tap-spec"
+  },
+  "author": "Erik Wittern",
+  "license": "MIT",
+  "dependencies": {
+    "httpsnippet": "^1.16.5",
+    "swagger-parser": "^3.4.1"
+  },
+  "devDependencies": {
+    "tap-spec": "^4.1.1",
+    "tape": "^4.6.0"
+  }
+}
