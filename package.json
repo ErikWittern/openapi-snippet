@@ -1,6 +1,6 @@
 {
   "name": "swagger-snippet",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Generates code snippets for given Swagger / Open API Specification files",
   "repository": {
     "type": "git",
@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "httpsnippet": "^1.16.5",
-    "swagger-parser": "^3.4.1"
+    "swagger-parser": "4.0.0-beta.2"
   },
   "devDependencies": {
     "tap-spec": "^4.1.1",
