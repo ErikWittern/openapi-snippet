@@ -21,8 +21,33 @@ var validateSpec = true // whether to validate the specification
 
 SwaggerSnippet(swagger, targets, validateSpec, function(err, data) {
   if (err) return
-  console.log(data) // prints array of snippets
+  console.log(data) // prints array of snippets, see "Output" below.
 })
+```
+
+## Output
+The output of this library is an array, where every entry corresponds to an endpoint (URL path + HTTP method) in the given specification. Every entry contains the `method`, `url`, a human-readable `description`, and the corresponding `resource` - all of these values stem from the specification. In addition, within the `snippets` list, an object containing a code snippet for every chosen target is provided.
+
+For example:
+
+```json
+[
+  ...
+  {
+    "method": "GET",
+    "url": "https://api.instagram.com/v1/users/{user-id}/relationship",
+    "description": "Get information about a relationship to another user.",
+    "resource": "relationship",
+    "snippets": [
+      {
+        "id": "node",
+        "title": "Node + Native",
+        "content": "var http = require(\"https\");\n\nvar options = {\n  \"method\": \"GET\",\n  \"hostname\": \"api.instagram.com\",\n  \"port\": null,\n  \"path\": \"/v1/users/%7Buser-id%7D/relationship\",\n  \"headers\": {\n    \"access_token\": \"REPLACE_KEY_VALUE\"\n  }\n};\n\nvar req = http.request(options, function (res) {\n  var chunks = [];\n\n  res.on(\"data\", function (chunk) {\n    chunks.push(chunk);\n  });\n\n  res.on(\"end\", function () {\n    var body = Buffer.concat(chunks);\n    console.log(body.toString());\n  });\n});\n\nreq.end();"
+      }
+    ]
+  }
+  ...
+]
 ```
 
 ## Targets
