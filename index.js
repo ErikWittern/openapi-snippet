@@ -10,51 +10,47 @@
 var SwaggerToHar = require('./swagger-to-har.js')
 var HTTPSnippet = require('httpsnippet')
 
-module.exports = function (swagger, targets, validateSpec, callback) {
-  SwaggerToHar(swagger, validateSpec, function (err, harList) {
-    if (err) {
-      return callback(err)
-    }
+module.exports = function (swagger, targets) {
+  var harList = SwaggerToHar(swagger)
 
-    var results = []
-    for (var i in harList) {
-      // create HTTPSnippet object:
-      var har = harList[i]
-      var snippet = new HTTPSnippet(har.har)
+  var results = []
+  for (var i in harList) {
+    // create HTTPSnippet object:
+    var har = harList[i]
+    var snippet = new HTTPSnippet(har.har)
 
-      var snippets = []
-      for (var j in targets) {
-        var target = formatTarget(targets[j])
-        if (!target) return callback('Invalid target: ' + targets[j])
-        snippets.push({
-          id: targets[j],
-          title: target.title,
-          content: snippet.convert(target.language, typeof target.library !== 'undefined' ? target.library : null)
-        })
-      }
-
-      results.push({
-        method: har.method,
-        url: har.url,
-        description: har.description,
-        resource: getResourceName(har.url),
-        snippets: snippets
+    var snippets = []
+    for (var j in targets) {
+      var target = formatTarget(targets[j])
+      if (!target) throw new Error('Invalid target: ' + targets[j])
+      snippets.push({
+        id: targets[j],
+        title: target.title,
+        content: snippet.convert(target.language, typeof target.library !== 'undefined' ? target.library : null)
       })
     }
 
-    // sort results:
-    results.sort(function (a, b) {
-      if (a.resource < b.resource) {
-        return -1
-      } else if (a.resource > b.resource) {
-        return 1
-      } else {
-        return getMethodOrder(a.method.toLowerCase(), b.method.toLowerCase())
-      }
+    results.push({
+      method: har.method,
+      url: har.url,
+      description: har.description,
+      resource: getResourceName(har.url),
+      snippets: snippets
     })
+  }
 
-    callback(null, results)
+  // sort results:
+  results.sort(function (a, b) {
+    if (a.resource < b.resource) {
+      return -1
+    } else if (a.resource > b.resource) {
+      return 1
+    } else {
+      return getMethodOrder(a.method.toLowerCase(), b.method.toLowerCase())
+    }
   })
+
+  return results
 }
 
 /**

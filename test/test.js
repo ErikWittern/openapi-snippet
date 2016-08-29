@@ -8,16 +8,16 @@ var InstagramSwagger = require('./instagram_swagger.json')
 test('Getting snippets should not result in error or undefined', function (t) {
   t.plan(1)
 
-  SwaggerSnippet(InstagramSwagger, ['c_libcurl'], false, function (err, data) {
-    if (err) throw err
-    t.notEqual(data, undefined)
-  })
+  var result = SwaggerSnippet(InstagramSwagger, ['c_libcurl'])
+  t.notEqual(result, undefined)
 })
 
 test('Receive error on invalid target', function (t) {
   t.plan(1)
 
-  SwaggerSnippet(InstagramSwagger, ['node_asfd'], false, function (err, data) {
-    t.ok(err)
-  })
+  try {
+    SwaggerSnippet(InstagramSwagger, ['node_asfd'])
+  } catch (err) {
+    t.equal(err.toString(), 'Error: Invalid target: node_asfd')
+  }
 })

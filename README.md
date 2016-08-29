@@ -1,7 +1,7 @@
 # swagger-snippet
 Generates code snippets for given Swagger / Open API specification files.
 
-This package takes as input a Swagger 2.0 / Open API specification. Optionally, it validates that specification. Translates the specification into an [HTTP Archive 1.2 request object](http://www.softwareishard.com/blog/har-12-spec/#request). Uses the [HTTP Snippet](https://github.com/Mashape/httpsnippet) library to generate code snippets for every API endpoint defined in the specification in various languages & tools (`cURL`, `Node`, `Python`, `Ruby`, `Java`, `Go`, `C#`...).
+This package takes as input a Swagger 2.0 / Open API specification. It translates the specification into an [HTTP Archive 1.2 request object](http://www.softwareishard.com/blog/har-12-spec/#request). It uses the [HTTP Snippet](https://github.com/Mashape/httpsnippet) library to generate code snippets for every API endpoint (URL path + HTTP method) defined in the specification in various languages & tools (`cURL`, `Node`, `Python`, `Ruby`, `Java`, `Go`, `C#`...).
 
 ## Installation
 
@@ -16,13 +16,13 @@ let SwaggerSnippet = require('swagger-snippet')
 // define input:
 var swagger = ... // a Swagger / Open API specification
 var targets = ['node_unirest', 'c'] // array of targets for code snippets. See list below...
-var validateSpec = true // whether to validate the specification
 
-
-SwaggerSnippet(swagger, targets, validateSpec, function(err, data) {
-  if (err) return
-  console.log(data) // prints array of snippets, see "Output" below.
-})
+try {
+  var results = SwaggerSnippet(swagger, targets)
+  // results is now array of snippets, see "Output" below.
+} catch (err) {
+  // do something with potential errors...
+}
 ```
 
 ## Output

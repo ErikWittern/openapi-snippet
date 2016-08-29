@@ -19,8 +19,6 @@
  * }
  */
 
-var SwaggerParser = require('swagger-parser')
-
 /**
  * Create HAR Request object for path and method pair described in given swagger.
  *
@@ -212,39 +210,32 @@ var getHeadersArray = function (swagger, path, method) {
  * Produces array of HAR files for given Swagger document
  *
  * @param  {object}   swagger          A swagger document
- * @param  {boolean}  validateSpec     Whether to validate spec
  * @param  {Function} callback
  */
-var swaggerToHarList = function (swagger, validateSpec, callback) {
-  SwaggerParser.validate(swagger, function (err, api) {
-    if (err && validateSpec) {
-      return callback(err)
-    }
+var swaggerToHarList = function (swagger) {
+  try {
+    // determine basePath:
+    var baseUrl = getBaseUrl(swagger)
 
-    try {
-      // determine basePath:
-      var baseUrl = getBaseUrl(swagger)
-
-      // iterate Swagger and create har objects:
-      var harList = []
-      for (var path in swagger.paths) {
-        for (var method in swagger.paths[path]) {
-          var url = baseUrl + path
-          var har = createHar(swagger, path, method)
-          harList.push({
-            method: method.toUpperCase(),
-            url: url,
-            description: swagger.paths[path][method].description || 'No description available',
-            har: har
-          })
-        }
+    // iterate Swagger and create har objects:
+    var harList = []
+    for (var path in swagger.paths) {
+      for (var method in swagger.paths[path]) {
+        var url = baseUrl + path
+        var har = createHar(swagger, path, method)
+        harList.push({
+          method: method.toUpperCase(),
+          url: url,
+          description: swagger.paths[path][method].description || 'No description available',
+          har: har
+        })
       }
-
-      return callback(null, harList)
-    } catch (e) {
-      callback(e)
     }
-  })
+
+    return harList
+  } catch (e) {
+    return null
+  }
 }
 
 module.exports = swaggerToHarList
