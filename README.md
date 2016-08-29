@@ -30,7 +30,7 @@ The output of this library is an array, where every entry corresponds to an endp
 
 For example:
 
-```json
+```
 [
   ...
   {
