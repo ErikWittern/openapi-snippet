@@ -2,12 +2,22 @@
   "name": "swagger-snippet",
   "version": "0.1.0",
   "description": "Generates code snippets for given Swagger / Open API Specification files",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikWittern/swagger-snippet"
+  },
+  "keywords": [
+    "HTTP",
+    "code snippets",
+    "Swagger",
+    "Open API Specification"
+  ],
+  "author": "Erik Wittern",
+  "license": "MIT",
   "main": "index.js",
   "scripts": {
     "test": "node test/test.js | tap-spec"
   },
-  "author": "Erik Wittern",
-  "license": "MIT",
   "dependencies": {
     "httpsnippet": "^1.16.5",
     "swagger-parser": "^3.4.1"
