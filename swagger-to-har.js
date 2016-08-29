@@ -212,12 +212,12 @@ var getHeadersArray = function (swagger, path, method) {
  * Produces array of HAR files for given Swagger document
  *
  * @param  {object}   swagger          A swagger document
- * @param  {boolean}  ignoreValidation Whether to ignore Swagger validation
+ * @param  {boolean}  validateSpec     Whether to validate spec
  * @param  {Function} callback
  */
-var swaggerToHarList = function (swagger, ignoreValidation, callback) {
+var swaggerToHarList = function (swagger, validateSpec, callback) {
   SwaggerParser.validate(swagger, function (err, api) {
-    if (err && !ignoreValidation) {
+    if (err && !validateSpec) {
       return callback(err)
     }
 

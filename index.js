@@ -7,14 +7,11 @@
  */
 'use strict'
 
-module.exports = function (urlStr, opts) {
-
-}
 var SwaggerToHar = require('./swagger-to-har.js')
 var HTTPSnippet = require('httpsnippet')
 
-module.exports = function (swagger, targets, ignoreValidation, callback) {
-  SwaggerToHar(swagger, ignoreValidation, function (err, harList) {
+module.exports = function (swagger, targets, validateSpec, callback) {
+  SwaggerToHar(swagger, validateSpec, function (err, harList) {
     if (err) {
       return callback(err)
     }
