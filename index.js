@@ -10,8 +10,33 @@
 var SwaggerToHar = require('./swagger-to-har.js')
 var HTTPSnippet = require('httpsnippet')
 
-module.exports = function (swagger, targets) {
-  var harList = SwaggerToHar(swagger)
+var getEndpointSnippets = function (swagger, path, method, targets) {
+  var har = SwaggerToHar.getEndpoint(swagger, path, method)
+
+  var snippet = new HTTPSnippet(har)
+
+  var snippets = []
+  for (var j in targets) {
+    var target = formatTarget(targets[j])
+    if (!target) throw new Error('Invalid target: ' + targets[j])
+    snippets.push({
+      id: targets[j],
+      title: target.title,
+      content: snippet.convert(target.language, typeof target.library !== 'undefined' ? target.library : null)
+    })
+  }
+
+  return {
+    method: har.method,
+    url: har.url,
+    description: har.description,
+    resource: getResourceName(har.url),
+    snippets: snippets
+  }
+}
+
+var getSwaggerSnippets = function (swagger, targets) {
+  var harList = SwaggerToHar.getAll(swagger)
 
   var results = []
   for (var i in harList) {
@@ -139,4 +164,9 @@ var formatTarget = function (targetStr) {
 
 var capitalizeFirstLetter = function (string) {
   return string.charAt(0).toUpperCase() + string.slice(1)
+}
+
+module.exports = {
+  getSwaggerSnippets: getSwaggerSnippets,
+  getEndpointSnippets: getEndpointSnippets
 }

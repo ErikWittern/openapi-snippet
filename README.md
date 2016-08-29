@@ -18,15 +18,20 @@ var swagger = ... // a Swagger / Open API specification
 var targets = ['node_unirest', 'c'] // array of targets for code snippets. See list below...
 
 try {
-  var results = SwaggerSnippet(swagger, targets)
-  // results is now array of snippets, see "Output" below.
+  // either, get snippets for ALL endpoints:
+  var results = SwaggerSnippet.getSwaggerSnippets(swagger, targets) // results is now array of snippets, see "Output" below.
+
+  // ...or, get snippets for a single endpoint:
+  var results2 = SwaggerSnippet.getEndpointSnippets(swagger, '/users/{user-id}/relationship', 'get', targets)
 } catch (err) {
   // do something with potential errors...
 }
 ```
 
 ## Output
-The output of this library is an array, where every entry corresponds to an endpoint (URL path + HTTP method) in the given specification. Every entry contains the `method`, `url`, a human-readable `description`, and the corresponding `resource` - all of these values stem from the specification. In addition, within the `snippets` list, an object containing a code snippet for every chosen target is provided.
+The output for every endpoint is an object, containing the `method`, `url`, a human-readable `description`, and the corresponding `resource` - all of these values stem from the specification. In addition, within the `snippets` list, an object containing a code snippet for every chosen target is provided.
+
+If `getSwaggerSnippets` is used, an array of the above described objects is returned.
 
 For example:
 

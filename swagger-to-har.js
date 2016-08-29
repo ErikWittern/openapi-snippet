@@ -238,4 +238,7 @@ var swaggerToHarList = function (swagger) {
   }
 }
 
-module.exports = swaggerToHarList
+module.exports = {
+  getAll: swaggerToHarList,
+  getEndpoint: createHar
+}
