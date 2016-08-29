@@ -217,7 +217,7 @@ var getHeadersArray = function (swagger, path, method) {
  */
 var swaggerToHarList = function (swagger, validateSpec, callback) {
   SwaggerParser.validate(swagger, function (err, api) {
-    if (err && !validateSpec) {
+    if (err && validateSpec) {
       return callback(err)
     }
 
