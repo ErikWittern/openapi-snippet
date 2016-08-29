@@ -1,7 +1,7 @@
 # swagger-snippet
 Generates code snippets for given Swagger / Open API specification files.
 
-This package takes as input a Swagger 2.0 / Open API specification. Optionally, validates that specification. Translates the specification into an [HTTP Archive 1.2 request object](http://www.softwareishard.com/blog/har-12-spec/#request). Uses the [HTTP Snippet](https://github.com/Mashape/httpsnippet) library to generate code snippets for every API endpoint defined in the specification in various languages & tools (`cURL`, `Node`, `Python`, `Ruby`, `Java`, `Go`, `C#`...).
+This package takes as input a Swagger 2.0 / Open API specification. Optionally, it validates that specification. Translates the specification into an [HTTP Archive 1.2 request object](http://www.softwareishard.com/blog/har-12-spec/#request). Uses the [HTTP Snippet](https://github.com/Mashape/httpsnippet) library to generate code snippets for every API endpoint defined in the specification in various languages & tools (`cURL`, `Node`, `Python`, `Ruby`, `Java`, `Go`, `C#`...).
 
 ## Installation
 
@@ -42,7 +42,7 @@ For example:
       {
         "id": "node",
         "title": "Node + Native",
-        "content": "var http = require(\"https\");\n\nvar options = {\n  \"method\": \"GET\",\n  \"hostname\": \"api.instagram.com\",\n  \"port\": null,\n  \"path\": \"/v1/users/%7Buser-id%7D/relationship\",\n  \"headers\": {\n    \"access_token\": \"REPLACE_KEY_VALUE\"\n  }\n};\n\nvar req = http.request(options, function (res) {\n  var chunks = [];\n\n  res.on(\"data\", function (chunk) {\n    chunks.push(chunk);\n  });\n\n  res.on(\"end\", function () {\n    var body = Buffer.concat(chunks);\n    console.log(body.toString());\n  });\n});\n\nreq.end();"
+        "content": "var http = require(\"https\");\n\nvar options = {..."
       }
     ]
   }
