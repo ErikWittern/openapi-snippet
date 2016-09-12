@@ -1,5 +1,5 @@
-# swagger-snippet
-Generates code snippets for given Swagger / Open API specification files.
+# Swagger Snippet
+*Generates code snippets for given Swagger / Open API specification files.*
 
 This package takes as input a Swagger 2.0 / Open API specification. It translates the specification into an [HTTP Archive 1.2 request object](http://www.softwareishard.com/blog/har-12-spec/#request). It uses the [HTTP Snippet](https://github.com/Mashape/httpsnippet) library to generate code snippets for every API endpoint (URL path + HTTP method) defined in the specification in various languages & tools (`cURL`, `Node`, `Python`, `Ruby`, `Java`, `Go`, `C#`...).
 
@@ -29,7 +29,7 @@ try {
 ```
 
 ## Output
-The output for every endpoint is an object, containing the `method`, `url`, a human-readable `description`, and the corresponding `resource` - all of these values stem from the specification. In addition, within the `snippets` list, an object containing a code snippet for every chosen target is provided.
+The output for every endpoint is an object, containing the `method`, `url`, a human-readable `description`, and the corresponding `resource` - all of these values stem from the specification. In addition, within the `snippets` list, an object containing a code snippet for every chosen target is provided. As of version `0.4.0`, the snippets include examplary payload data.
 
 If `getSwaggerSnippets` is used, an array of the above described objects is returned.
 
