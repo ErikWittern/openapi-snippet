@@ -18,6 +18,7 @@
  *   "comment" : ""
  * }
  */
+var Instantiator = require('./schema-instantiator.js')
 
 /**
  * Create HAR Request object for path and method pair described in given swagger.
@@ -36,13 +37,83 @@ var createHar = function (swagger, path, method) {
     headers: getHeadersArray(swagger, path, method),
     queryString: getQueryStrings(swagger, path, method)
   }
-  // if (body) {
-  //   confHAR.postData = {
-  //     mimeType: $scope.contentType,
-  //     text: body
-  //   }
-  // }
+
+  // get payload data, if available:
+  var postData = getPayload(swagger, path, method)
+  if (postData) har.postData = postData
+
   return har
+}
+
+/**
+ * Get the payload definition for the given endpoint (path + method) from the
+ * given OAI specification. References within the payload definition are
+ * resolved.
+ *
+ * @param  {object} swagger
+ * @param  {string} path
+ * @param  {string} method
+ * @return {object}
+ */
+var getPayload = function (swagger, path, method) {
+  if (typeof swagger.paths[path][method].parameters !== 'undefined') {
+    for (var i in swagger.paths[path][method].parameters) {
+      var param = swagger.paths[path][method].parameters[i]
+      if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'body' &&
+        typeof param.schema !== 'undefined') {
+        var schema
+        if (typeof param.schema['$ref'] === 'undefined') {
+          schema = param.schema
+        } else {
+          var ref = param.schema['$ref'].split('/').slice(-1)[0]
+          schema = getResolvedSchema(swagger, swagger.definitions[ref])
+        }
+
+        return {
+          mimeType: 'application/json',
+          text: JSON.stringify(Instantiator.instantiate(schema))
+        }
+      }
+    }
+  }
+  return null
+}
+
+/**
+ * Get a complete JSON schema from Swagger, where all references ($ref) are
+ * resolved. $ref appear:
+ * - as properties
+ * - as items
+ *
+ * @param  {[type]} swagger [description]
+ * @param  {[type]} schema  [description]
+ * @param  {[type]} ref     [description]
+ * @return {[type]}         [description]
+ */
+var getResolvedSchema = function (swagger, schema) {
+  if (schema.type === 'object') {
+    if (typeof schema.properties !== 'undefined') {
+      for (var propKey in schema.properties) {
+        var prop = schema.properties[propKey]
+        if (typeof prop['$ref'] !== 'undefined') {
+          var ref = prop['$ref'].split('/').slice(-1)[0]
+          schema.properties[propKey] = swagger.definitions[ref]
+        }
+        getResolvedSchema(swagger, schema.properties[propKey])
+      }
+    }
+  } else if (schema.type === 'array') {
+    if (typeof schema.items !== 'undefined') {
+      for (var itemKey in schema.items) {
+        if (itemKey === '$ref') {
+          var ref2 = schema.items['$ref'].split('/').slice(-1)[0]
+          schema.items = swagger.definitions[ref2]
+        }
+        getResolvedSchema(swagger, schema.items)
+      }
+    }
+  }
+  return schema
 }
 
 /**
