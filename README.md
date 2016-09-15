@@ -8,7 +8,18 @@ This package takes as input a Swagger 2.0 / Open API specification. It translate
     npm i --save swagger-snippet
 
 
+## Build Swagger Snippet (for use in browser)
+Clone the Swagger Snippet repository. Install required dependencies:
+
+    npm i
+
+Build a minified version of Swagger Snippet (`swaggersnippet.min.js`):
+
+    npm run build
+
 ## Usage
+
+### As a module
 
 ```javascript
 let SwaggerSnippet = require('swagger-snippet')
@@ -27,6 +38,15 @@ try {
   // do something with potential errors...
 }
 ```
+
+### Within the browser
+
+Include the `swaggersnippet.min.js` file created after building the the library (see above) in your HTML page:
+
+    <script type="text/javascript" src="path/to/swaggersnippet.min.js"></script>
+
+Use Swagger Snippet, which now defines the global variable `SwaggerSnippet`.
+
 
 ## Output
 The output for every endpoint is an object, containing the `method`, `url`, a human-readable `description`, and the corresponding `resource` - all of these values stem from the specification. In addition, within the `snippets` list, an object containing a code snippet for every chosen target is provided. As of version `0.4.0`, the snippets include examplary payload data.

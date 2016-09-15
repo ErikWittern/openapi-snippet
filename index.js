@@ -170,3 +170,16 @@ module.exports = {
   getSwaggerSnippets: getSwaggerSnippets,
   getEndpointSnippets: getEndpointSnippets
 }
+
+// grab existing namespace object, or create a blank object
+// if it doesn't exist
+var SwaggerSnippet = window.SwaggerSnippet || {}
+
+// define that object
+SwaggerSnippet = {
+  getSwaggerSnippets: getSwaggerSnippets,
+  getEndpointSnippets: getEndpointSnippets
+}
+
+// replace/create the global namespace
+window.SwaggerSnippet = SwaggerSnippet
