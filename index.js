@@ -171,15 +171,18 @@ module.exports = {
   getEndpointSnippets: getEndpointSnippets
 }
 
-// grab existing namespace object, or create a blank object
-// if it doesn't exist
-var SwaggerSnippet = window.SwaggerSnippet || {}
+// The if is only for when this is run from the browser
+if (typeof window !== 'undefined') {
+  // grab existing namespace object, or create a blank object
+  // if it doesn't exist
+  var SwaggerSnippet = window.SwaggerSnippet || {}
 
-// define that object
-SwaggerSnippet = {
-  getSwaggerSnippets: getSwaggerSnippets,
-  getEndpointSnippets: getEndpointSnippets
+  // define that object
+  SwaggerSnippet = {
+    getSwaggerSnippets: getSwaggerSnippets,
+    getEndpointSnippets: getEndpointSnippets
+  }
+
+  // replace/create the global namespace
+  window.SwaggerSnippet = SwaggerSnippet
 }
-
-// replace/create the global namespace
-window.SwaggerSnippet = SwaggerSnippet
