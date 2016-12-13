@@ -29,13 +29,26 @@ var Instantiator = require('./schema-instantiator.js')
  * @return {Object}         HAR Request object
  */
 var createHar = function (swagger, path, method) {
+  return createHarWithQueryValues(swagger, path, method, {})
+}
+
+/**
+ * Create HAR Request object for path and method pair described in given swagger.
+ *
+ * @param  {Object} swagger           Swagger document
+ * @param  {string} path              Key of the path
+ * @param  {string} method            Key of the method
+ * @param  {Object} queryParamValues  Values for the query parameters if present
+ * @return {Object}                   HAR Request object
+ */
+var createHarWithQueryValues = function (swagger, path, method, queryParamValues) {
   var baseUrl = getBaseUrl(swagger)
 
   var har = {
     method: method.toUpperCase(),
     url: baseUrl + path,
     headers: getHeadersArray(swagger, path, method),
-    queryString: getQueryStrings(swagger, path, method)
+    queryString: getQueryStringsWithValues(swagger, path, method, queryParamValues)
   }
 
   // get payload data, if available:
@@ -146,9 +159,10 @@ var getBaseUrl = function (swagger) {
  * @param  {Object} swagger Swagger document
  * @param  {string} path    Key of the path
  * @param  {string} method  Key of the method
- * @return {array}         List of objects describing the query strings
+ * @param  {Object} values  Query parameter values to use in the snippet if present
+ * @return {array}          List of objects describing the query strings
  */
-var getQueryStrings = function (swagger, path, method) {
+var getQueryStringsWithValues = function (swagger, path, method, values) {
   var queryStrings = []
 
   if (typeof swagger.paths[path][method].parameters !== 'undefined') {
@@ -157,7 +171,9 @@ var getQueryStrings = function (swagger, path, method) {
       if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query') {
         queryStrings.push({
           name: param.name,
-          value: 'SOME_' + param.type.toUpperCase() + '_VALUE'
+          value: typeof values[param.name] === 'undefined'
+            ? ('SOME_' + param.type.toUpperCase() + '_VALUE')
+            : values[param.name] + '' /* adding a empty string to convert to string */
         })
       }
     }
@@ -311,5 +327,6 @@ var swaggerToHarList = function (swagger) {
 
 module.exports = {
   getAll: swaggerToHarList,
-  getEndpoint: createHar
+  getEndpoint: createHar,
+  getEndpointWithQueryValues: createHarWithQueryValues
 }

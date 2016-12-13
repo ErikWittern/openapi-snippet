@@ -37,3 +37,16 @@ test('Getting snippets for endpoint should contain body', function (t) {
   t.true(/body/.test(result.snippets[0].content))
   t.true(/subPage/.test(result.snippets[0].content))
 })
+
+test('Testing optionally provided parameter values', function (t) {
+  t.plan(2)
+  // checks the 'Pages' schema...
+  var result = SwaggerSnippet.getEndpointSnippetsWithQueryValues(InstagramSwagger, '/locations/search', 'get', ['node_request'],
+    {
+      'distance': 5000,
+      'not-a-parameter': 'foo'
+    })
+  console.log(result.snippets[0].content)
+  t.true(/5000/.test(result.snippets[0].content))
+  t.false(/not-a-parameter/.test(result.snippets[0].content))
+})
