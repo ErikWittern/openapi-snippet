@@ -173,7 +173,6 @@ module.exports = {
 
 // The if is only for when this is run from the browser
 if (typeof window !== 'undefined') {
-
   // grab existing namespace object, or create a blank object
   // if it doesn't exist
   var SwaggerSnippet = window.SwaggerSnippet || {}
