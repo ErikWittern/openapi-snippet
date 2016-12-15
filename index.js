@@ -10,13 +10,13 @@
 var SwaggerToHar = require('./swagger-to-har.js')
 var HTTPSnippet = require('httpsnippet')
 
-var getEndpointSnippets = function (swagger, path, method, targets) {
-  return getEndpointSnippetsWithQueryValues(swagger, path, method, targets, {})
-}
+var getEndpointSnippets = function (swagger, path, method, targets, values) {
+  // if optional parameter is not provided, set it to empty object
+  if (typeof values === 'undefined') {
+    values = {}
+  }
 
-var getEndpointSnippetsWithQueryValues = function (swagger, path, method, targets, values) {
-  console.log('values')
-  var har = SwaggerToHar.getEndpointWithQueryValues(swagger, path, method, values)
+  var har = SwaggerToHar.getEndpoint(swagger, path, method, values)
 
   var snippet = new HTTPSnippet(har)
 
@@ -173,8 +173,7 @@ var capitalizeFirstLetter = function (string) {
 
 module.exports = {
   getSwaggerSnippets: getSwaggerSnippets,
-  getEndpointSnippets: getEndpointSnippets,
-  getEndpointSnippetsWithQueryValues: getEndpointSnippetsWithQueryValues
+  getEndpointSnippets: getEndpointSnippets
 }
 
 // The if is only for when this is run from the browser
@@ -186,8 +185,7 @@ if (typeof window !== 'undefined') {
   // define that object
   SwaggerSnippet = {
     getSwaggerSnippets: getSwaggerSnippets,
-    getEndpointSnippets: getEndpointSnippets,
-    getEndpointSnippetsWithQueryValues: getEndpointSnippetsWithQueryValues
+    getEndpointSnippets: getEndpointSnippets
   }
 
   // replace/create the global namespace

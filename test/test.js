@@ -17,7 +17,8 @@ test('An invalid target should result in error', function (t) {
   t.plan(1)
 
   try {
-    SwaggerSnippet.getSwaggerSnippets(InstagramSwagger, ['node_asfd'])
+    var result = SwaggerSnippet.getSwaggerSnippets(BloggerSwagger, ['node_asfd'])
+    console.log(result)
   } catch (err) {
     t.equal(err.toString(), 'Error: Invalid target: node_asfd')
   }
@@ -41,12 +42,11 @@ test('Getting snippets for endpoint should contain body', function (t) {
 test('Testing optionally provided parameter values', function (t) {
   t.plan(2)
   // checks the 'Pages' schema...
-  var result = SwaggerSnippet.getEndpointSnippetsWithQueryValues(InstagramSwagger, '/locations/search', 'get', ['node_request'],
+  var result = SwaggerSnippet.getEndpointSnippets(InstagramSwagger, '/locations/search', 'get', ['node_request'],
     {
       'distance': 5000,
-      'not-a-parameter': 'foo'
+      'not-a-query-param': 'foo'
     })
-  console.log(result.snippets[0].content)
   t.true(/5000/.test(result.snippets[0].content))
-  t.false(/not-a-parameter/.test(result.snippets[0].content))
+  t.false(/not-a-query-param/.test(result.snippets[0].content))
 })
