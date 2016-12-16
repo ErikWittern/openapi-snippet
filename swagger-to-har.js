@@ -23,19 +23,25 @@ var Instantiator = require('./schema-instantiator.js')
 /**
  * Create HAR Request object for path and method pair described in given swagger.
  *
- * @param  {Object} swagger Swagger document
- * @param  {string} path    Key of the path
- * @param  {string} method  Key of the method
- * @return {Object}         HAR Request object
+ * @param  {Object} swagger           Swagger document
+ * @param  {string} path              Key of the path
+ * @param  {string} method            Key of the method
+ * @param  {Object} queryParamValues  Optional: Values for the query parameters if present
+ * @return {Object}                   HAR Request object
  */
-var createHar = function (swagger, path, method) {
+var createHar = function (swagger, path, method, queryParamValues) {
+  // if the operational parameter is not provided, set it to empty object
+  if (typeof queryParamValues === 'undefined') {
+    queryParamValues = {}
+  }
+
   var baseUrl = getBaseUrl(swagger)
 
   var har = {
     method: method.toUpperCase(),
     url: baseUrl + path,
     headers: getHeadersArray(swagger, path, method),
-    queryString: getQueryStrings(swagger, path, method)
+    queryString: getQueryStrings(swagger, path, method, queryParamValues)
   }
 
   // get payload data, if available:
@@ -146,9 +152,15 @@ var getBaseUrl = function (swagger) {
  * @param  {Object} swagger Swagger document
  * @param  {string} path    Key of the path
  * @param  {string} method  Key of the method
- * @return {array}         List of objects describing the query strings
+ * @param  {Object} values  Optional: query parameter values to use in the snippet if present
+ * @return {array}          List of objects describing the query strings
  */
-var getQueryStrings = function (swagger, path, method) {
+var getQueryStrings = function (swagger, path, method, values) {
+  // Set the optional parameter if it's not provided
+  if (typeof values === 'undefined') {
+    values = {}
+  }
+
   var queryStrings = []
 
   if (typeof swagger.paths[path][method].parameters !== 'undefined') {
@@ -157,7 +169,9 @@ var getQueryStrings = function (swagger, path, method) {
       if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query') {
         queryStrings.push({
           name: param.name,
-          value: 'SOME_' + param.type.toUpperCase() + '_VALUE'
+          value: typeof values[param.name] === 'undefined'
+            ? ('SOME_' + param.type.toUpperCase() + '_VALUE')
+            : values[param.name] + '' /* adding a empty string to convert to string */
         })
       }
     }

@@ -10,8 +10,13 @@
 var SwaggerToHar = require('./swagger-to-har.js')
 var HTTPSnippet = require('httpsnippet')
 
-var getEndpointSnippets = function (swagger, path, method, targets) {
-  var har = SwaggerToHar.getEndpoint(swagger, path, method)
+var getEndpointSnippets = function (swagger, path, method, targets, values) {
+  // if optional parameter is not provided, set it to empty object
+  if (typeof values === 'undefined') {
+    values = {}
+  }
+
+  var har = SwaggerToHar.getEndpoint(swagger, path, method, values)
 
   var snippet = new HTTPSnippet(har)
 
