@@ -170,8 +170,10 @@ var getQueryStrings = function (swagger, path, method, values) {
         queryStrings.push({
           name: param.name,
           value: typeof values[param.name] === 'undefined'
-            ? ('SOME_' + param.type.toUpperCase() + '_VALUE')
-            : values[param.name] + '' /* adding a empty string to convert to string */
+            ? (typeof param.default === 'undefined'
+              ? ('SOME_' + param.type.toUpperCase() + '_VALUE')
+              : param.default)
+            : (values[param.name] + '') /* adding a empty string to convert to string */
         })
       }
     }
