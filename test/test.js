@@ -6,6 +6,7 @@ var SwaggerSnippet = require('../index')
 var InstagramSwagger = require('./instagram_swagger.json')
 var BloggerSwagger = require('./blogger_swagger.json')
 var GithubSwagger = require('./github_swagger.json')
+var WatsonSwagger = require('./watson_alchemy_language_swagger.json')
 
 test('Getting snippets should not result in error or undefined', function (t) {
   t.plan(1)
@@ -52,7 +53,6 @@ test('Testing optionally provided parameter values', function (t) {
   t.false(/not-a-query-param/.test(result.snippets[0].content))
 })
 
-
 test('Testing the case when default is present but a value is provided, use the provided value', function (t) {
   t.plan(2)
   // checks the 'Pages' schema...
@@ -70,4 +70,12 @@ test('Testing the case when default is present but no value is provided, use the
   var result = SwaggerSnippet.getEndpointSnippets(GithubSwagger, '/issues', 'get', ['node_request'])
   t.false(/assigned/.test(result.snippets[0].content))
   t.true(/all/.test(result.snippets[0].content))  // The default value of `filter` is `all`
+})
+
+test('Referenced query parameters should be resolved', function (t) {
+  var result = SwaggerSnippet.getEndpointSnippets(WatsonSwagger, '/html/HTMLExtractDates', 'get', ['node_request'])
+  var snippet = result.snippets[0].content
+  t.true(/apikey/.test(snippet))
+  t.true(/showSourceText/.test(snippet))
+  t.end()
 })

@@ -166,6 +166,9 @@ var getQueryStrings = function (swagger, path, method, values) {
   if (typeof swagger.paths[path][method].parameters !== 'undefined') {
     for (var i in swagger.paths[path][method].parameters) {
       var param = swagger.paths[path][method].parameters[i]
+      if (typeof param['$ref'] !== 'undefined') {
+        param = resolveRef(swagger, param['$ref'])
+      }
       if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query') {
         queryStrings.push({
           name: param.name,
@@ -323,6 +326,29 @@ var swaggerToHarList = function (swagger) {
   } catch (e) {
     return null
   }
+}
+
+/**
+ * Returns the value referenced in the given reference string
+ *
+ * @param  {object} oai
+ * @param  {string} ref A reference string
+ * @return {any}
+ */
+var resolveRef = function (oai, ref) {
+  var parts = ref.split('/')
+
+  if (parts.length <= 1) return {} // = 3
+
+  var recursive = function (obj, index) {
+    if (index + 1 < parts.length) { // index = 1
+      var newCount = index + 1
+      return recursive(obj[parts[index]], newCount)
+    } else {
+      return obj[parts[index]]
+    }
+  }
+  return recursive(oai, 1)
 }
 
 module.exports = {
