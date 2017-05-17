@@ -70,6 +70,8 @@ var getPayload = function (swagger, path, method) {
         var schema
         if (typeof param.schema['$ref'] === 'undefined') {
           schema = param.schema
+        } else if (/^http/.test(param.schema['$ref'])) {
+          // can't resolve this for now...
         } else {
           var ref = param.schema['$ref'].split('/').slice(-1)[0]
           schema = getResolvedSchema(swagger, swagger.definitions[ref])
@@ -101,7 +103,8 @@ var getResolvedSchema = function (swagger, schema) {
     if (typeof schema.properties !== 'undefined') {
       for (var propKey in schema.properties) {
         var prop = schema.properties[propKey]
-        if (typeof prop['$ref'] !== 'undefined') {
+        if (typeof prop['$ref'] === 'string' &&
+          !/^http/.test(prop['$ref'])) {
           var ref = prop['$ref'].split('/').slice(-1)[0]
           schema.properties[propKey] = swagger.definitions[ref]
         }
@@ -111,7 +114,8 @@ var getResolvedSchema = function (swagger, schema) {
   } else if (schema.type === 'array') {
     if (typeof schema.items !== 'undefined') {
       for (var itemKey in schema.items) {
-        if (itemKey === '$ref') {
+        if (itemKey === '$ref' &&
+          !/^http/.test(schema.items[itemKey])) {
           var ref2 = schema.items['$ref'].split('/').slice(-1)[0]
           schema.items = swagger.definitions[ref2]
         }
@@ -166,7 +170,8 @@ var getQueryStrings = function (swagger, path, method, values) {
   if (typeof swagger.paths[path][method].parameters !== 'undefined') {
     for (var i in swagger.paths[path][method].parameters) {
       var param = swagger.paths[path][method].parameters[i]
-      if (typeof param['$ref'] !== 'undefined') {
+      if (typeof param['$ref'] === 'string' &&
+        !/^http/.test(param['$ref'])) {
         param = resolveRef(swagger, param['$ref'])
       }
       if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query') {
