@@ -7,6 +7,7 @@ var InstagramSwagger = require('./instagram_swagger.json')
 var BloggerSwagger = require('./blogger_swagger.json')
 var GithubSwagger = require('./github_swagger.json')
 var WatsonSwagger = require('./watson_alchemy_language_swagger.json')
+var IBMSwagger = require('./ibm_watson_alchemy_data_news_api.json')
 
 test('Getting snippets should not result in error or undefined', function (t) {
   t.plan(1)
@@ -30,6 +31,13 @@ test('Getting snippets for endpoint should not result in error or undefined', fu
   t.plan(1)
 
   var result = SwaggerSnippet.getEndpointSnippets(InstagramSwagger, '/geographies/{geo-id}/media/recent', 'get', ['c_libcurl'])
+  t.notEqual(result, undefined)
+})
+
+test('Getting snippets for IBM Watson Alchemy Language should work', function (t) {
+  t.plan(1)
+
+  var result = SwaggerSnippet.getEndpointSnippets(IBMSwagger, '/data/GetNews', 'get', ['node_request'])
   t.notEqual(result, undefined)
 })
 

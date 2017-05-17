@@ -41,7 +41,11 @@ var createHar = function (swagger, path, method, queryParamValues) {
     method: method.toUpperCase(),
     url: baseUrl + path,
     headers: getHeadersArray(swagger, path, method),
-    queryString: getQueryStrings(swagger, path, method, queryParamValues)
+    queryString: getQueryStrings(swagger, path, method, queryParamValues),
+    httpVersion: 'HTTP/1.1',
+    cookies: [],
+    headersSize: 0,
+    bodySize: 0
   }
 
   // get payload data, if available:
@@ -180,7 +184,7 @@ var getQueryStrings = function (swagger, path, method, values) {
           value: typeof values[param.name] === 'undefined'
             ? (typeof param.default === 'undefined'
               ? ('SOME_' + param.type.toUpperCase() + '_VALUE')
-              : param.default)
+              : param.default + '')
             : (values[param.name] + '') /* adding a empty string to convert to string */
         })
       }
