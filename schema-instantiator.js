@@ -86,6 +86,9 @@ function instantiatePrimitive (val) {
     return val.default
   }
 
+  if (val.example) {
+    return val.example
+  }
   return typesInstantiator[type]
 }
 
@@ -137,7 +140,7 @@ function instantiate (schema, options) {
     var i
     var type = obj.type
     // We want non-primitives objects (primitive === object w/o properties).
-    if (type === 'object' && obj.properties) {
+    if (obj && obj.properties) {
       data[name] = data[name] || { }
 
       // Visit each property.
