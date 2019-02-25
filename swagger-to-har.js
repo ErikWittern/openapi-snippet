@@ -18,7 +18,7 @@
  *   "comment" : ""
  * }
  */
-var Instantiator = require('./schema-instantiator.js')
+var OpenAPISampler = require('openapi-sampler')
 
 /**
  * Create HAR Request object for path and method pair described in given swagger.
@@ -71,63 +71,20 @@ var getPayload = function (swagger, path, method) {
       var param = swagger.paths[path][method].parameters[i]
       if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'body' &&
         typeof param.schema !== 'undefined') {
-        var schema
-        if (typeof param.schema['$ref'] === 'undefined') {
-          schema = param.schema
-        } else if (/^http/.test(param.schema['$ref'])) {
-          // can't resolve this for now...
-        } else {
-          var ref = param.schema['$ref'].split('/').slice(-1)[0]
-          schema = getResolvedSchema(swagger, swagger.definitions[ref])
-        }
-
-        return {
-          mimeType: 'application/json',
-          text: JSON.stringify(Instantiator.instantiate(schema))
-        }
+          try {
+            const sample = OpenAPISampler.sample(param.schema, {skipReadOnly: true}, swagger)
+            return {
+              mimeType: 'application/json',
+              text: JSON.stringify(sample)
+            }
+          } catch (err) {
+            console.log(err)
+            return null
+          }
       }
     }
   }
   return null
-}
-
-/**
- * Get a complete JSON schema from Swagger, where all references ($ref) are
- * resolved. $ref appear:
- * - as properties
- * - as items
- *
- * @param  {[type]} swagger [description]
- * @param  {[type]} schema  [description]
- * @param  {[type]} ref     [description]
- * @return {[type]}         [description]
- */
-var getResolvedSchema = function (swagger, schema) {
-  if (schema.type === 'object') {
-    if (typeof schema.properties !== 'undefined') {
-      for (var propKey in schema.properties) {
-        var prop = schema.properties[propKey]
-        if (typeof prop['$ref'] === 'string' &&
-          !/^http/.test(prop['$ref'])) {
-          var ref = prop['$ref'].split('/').slice(-1)[0]
-          schema.properties[propKey] = swagger.definitions[ref]
-        }
-        getResolvedSchema(swagger, schema.properties[propKey])
-      }
-    }
-  } else if (schema.type === 'array') {
-    if (typeof schema.items !== 'undefined') {
-      for (var itemKey in schema.items) {
-        if (itemKey === '$ref' &&
-          !/^http/.test(schema.items[itemKey])) {
-          var ref2 = schema.items['$ref'].split('/').slice(-1)[0]
-          schema.items = swagger.definitions[ref2]
-        }
-        getResolvedSchema(swagger, schema.items)
-      }
-    }
-  }
-  return schema
 }
 
 /**
