@@ -8,6 +8,7 @@ var BloggerSwagger = require('./blogger_swagger.json')
 var GithubSwagger = require('./github_swagger.json')
 var WatsonSwagger = require('./watson_alchemy_language_swagger.json')
 var IBMSwagger = require('./ibm_watson_alchemy_data_news_api.json')
+var PetStoreSwagger = require('./petstore_swagger.json')
 
 test('Getting snippets should not result in error or undefined', function (t) {
   t.plan(1)
@@ -85,5 +86,15 @@ test('Referenced query parameters should be resolved', function (t) {
   var snippet = result.snippets[0].content
   t.true(/apikey/.test(snippet))
   t.true(/showSourceText/.test(snippet))
+  t.end()
+})
+
+test('Resolve samples from nested examples', function (t) {
+  var result = SwaggerSnippet.getEndpointSnippets(PetStoreSwagger, '/user', 'post', ['node_request'])
+  var snippet = result.snippets[0].content
+  t.true(/username.*John78\'/.test(snippet))
+  t.true(/email.*john.smith@example.com\'/.test(snippet))
+  t.true(/phone.*\+1\-202\-555\-0192/.test(snippet))
+  t.true(/password.*drowssaP123/.test(snippet))
   t.end()
 })

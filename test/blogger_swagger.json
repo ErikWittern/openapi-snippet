@@ -2984,7 +2984,7 @@
           "type": "number"
         },
         "subSubPage": {
-          "$ref": "#/descriptions/SubSubPage"
+          "$ref": "#/definitions/SubSubPage"
         }
       },
       "type": "object"
