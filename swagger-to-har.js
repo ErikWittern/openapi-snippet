@@ -84,6 +84,15 @@ var getPayload = function (swagger, path, method) {
       }
     }
   }
+    if (swagger.paths[path][method].requestBody && swagger.paths[path][method].requestBody.content &&
+        swagger.paths[path][method].requestBody.content['application/json'] &&
+        swagger.paths[path][method].requestBody.content['application/json'].schema) {
+        const sample = OpenAPISampler.sample(swagger.paths[path][method].requestBody.content['application/json'].schema, {skipReadOnly: true}, swagger)
+        return {
+            mimeType: 'application/json',
+            text: JSON.stringify(sample)
+        }
+    }
   return null
 }
 
@@ -94,6 +103,8 @@ var getPayload = function (swagger, path, method) {
  * @return {string}         Base URL
  */
 var getBaseUrl = function (swagger) {
+  if (swagger.servers)
+      return swagger.servers[0].url;
   var baseUrl = ''
   if (typeof swagger.schemes !== 'undefined') {
     baseUrl += swagger.schemes[0]
@@ -140,7 +151,7 @@ var getQueryStrings = function (swagger, path, method, values) {
           name: param.name,
           value: typeof values[param.name] === 'undefined'
             ? (typeof param.default === 'undefined'
-              ? ('SOME_' + param.type.toUpperCase() + '_VALUE')
+              ? ('SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE')
               : param.default + '')
             : (values[param.name] + '') /* adding a empty string to convert to string */
         })
@@ -194,7 +205,7 @@ var getHeadersArray = function (swagger, path, method) {
       if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'header') {
         headers.push({
           name: param.name,
-          value: 'SOME_' + param.type.toUpperCase() + '_VALUE'
+          value: 'SOME_' + (param.type||param.schema.type).toUpperCase() + '_VALUE'
         })
       }
     }
@@ -207,7 +218,9 @@ var getHeadersArray = function (swagger, path, method) {
   if (typeof pathObj.security !== 'undefined') {
     for (var l in pathObj.security) {
       var secScheme = Object.keys(pathObj.security[l])[0]
-      var authType = swagger.securityDefinitions[secScheme].type.toLowerCase()
+      var authType = swagger.securityDefinitions ?
+        swagger.securityDefinitions[secScheme].type.toLowerCase() :
+        swagger.components.securitySchemes[secScheme].type.toLowerCase;
       switch (authType) {
         case 'basic':
           basicAuthDef = secScheme
@@ -290,7 +303,7 @@ var swaggerToHarList = function (swagger) {
 
     return harList
   } catch (e) {
-    return null
+    console.log(e);
   }
 }
 
