@@ -198,6 +198,16 @@ var getHeadersArray = function (swagger, path, method) {
     }
   }
 
+  // v3 'content-type' header:
+  if (pathObj.requestBody && pathObj.requestBody.content) {
+      for (const type3 of Object.keys(pathObj.requestBody.content)) {
+          headers.push({
+              name: 'content-type',
+              value: type3
+          });
+      }
+  }
+
   // headers defined in path object:
   if (typeof pathObj.parameters !== 'undefined') {
     for (var k in pathObj.parameters) {
@@ -218,16 +228,17 @@ var getHeadersArray = function (swagger, path, method) {
   if (typeof pathObj.security !== 'undefined') {
     for (var l in pathObj.security) {
       var secScheme = Object.keys(pathObj.security[l])[0]
-      var authType = swagger.securityDefinitions ?
-        swagger.securityDefinitions[secScheme].type.toLowerCase() :
-        swagger.components.securitySchemes[secScheme].type.toLowerCase;
+      var secDefinition = swagger.securityDefinitions ?
+        swagger.securityDefinitions[secScheme] :
+        swagger.components.securitySchemes[secScheme];
+      var authType = secDefinition.type.toLowerCase();
       switch (authType) {
         case 'basic':
           basicAuthDef = secScheme
           break
         case 'apikey':
-          if (swagger.securityDefinitions[secScheme].in === 'query') {
-            apiKeyAuthDef = secScheme
+          if (secDefinition.in === 'header') {
+            apiKeyAuthDef = secDefinition
           }
           break
         case 'oauth2':
@@ -245,7 +256,7 @@ var getHeadersArray = function (swagger, path, method) {
           break
         case 'apikey':
           if (swagger.securityDefinitions[overallSecScheme].in === 'query') {
-            apiKeyAuthDef = overallSecScheme
+            apiKeyAuthDef = swagger.securityDefinitions[overallSecScheme]
           }
           break
         case 'oauth2':
@@ -262,7 +273,7 @@ var getHeadersArray = function (swagger, path, method) {
     })
   } else if (apiKeyAuthDef) {
     headers.push({
-      name: swagger.securityDefinitions[apiKeyAuthDef].name,
+      name: apiKeyAuthDef.name,
       value: 'REPLACE_KEY_VALUE'
     })
   } else if (oauthDef) {
