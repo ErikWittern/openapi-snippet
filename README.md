@@ -56,7 +56,7 @@ Use Swagger Snippet, which now defines the global variable `SwaggerSnippet`.
 
 
 ## Output
-The output for every endpoint is an object, containing the `method`, `url`, a human-readable `description`, and the corresponding `resource` - all of these values stem from the specification. In addition, within the `snippets` list, an object containing a code snippet for every chosen target is provided. As of version `0.4.0`, the snippets include examplary payload data.
+The output for every endpoint is an object, containing the `method`, `url`, a human-readable `description`, and the corresponding `resource` - all of these values stem from the specification. In addition, within the `snippets` list, an object containing a code snippet for every chosen target is provided. As of version `0.4.0`, the snippets include exemplary payload data.
 
 If `getSwaggerSnippets` is used, an array of the above described objects is returned.
 
