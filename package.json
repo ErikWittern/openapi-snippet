@@ -1,6 +1,6 @@
 {
   "name": "swagger-snippet",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Generates code snippets for given Swagger / Open API Specification files",
   "repository": {
     "type": "git",
@@ -10,7 +10,7 @@
     "HTTP",
     "code snippets",
     "Swagger",
-    "Open API Specification"
+    "OpenAPI Specification"
   ],
   "author": "Erik Wittern",
   "license": "MIT",

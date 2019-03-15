@@ -1,39 +1,44 @@
 # Swagger Snippet
 **Generates code snippets for given Swagger / Open API specification files.**
 
-This package takes as input a Swagger 2.0 / Open API specification. It translates the specification into an [HTTP Archive 1.2 request object](http://www.softwareishard.com/blog/har-12-spec/#request). It uses the [HTTP Snippet](https://github.com/Mashape/httpsnippet) library to generate code snippets for every API endpoint (URL path + HTTP method) defined in the specification in various languages & tools (`cURL`, `Node`, `Python`, `Ruby`, `Java`, `Go`, `C#`...).
+This package takes as input a Swagger 2.0 / OpenAPI v3.0.x specification. It translates the specification into an [HTTP Archive 1.2 request object](http://www.softwareishard.com/blog/har-12-spec/#request). It uses the [HTTP Snippet](https://github.com/Mashape/httpsnippet) library to generate code snippets for every API endpoint (URL path + HTTP method) defined in the specification in various languages & tools (`cURL`, `Node`, `Python`, `Ruby`, `Java`, `Go`, `C#`...).
 
 ## Installation
 
-    npm i --save swagger-snippet
-
+```bash
+npm i swagger-snippet
+```
 
 ## Build Swagger Snippet (for use in browser)
 Clone the Swagger Snippet repository. Install required dependencies:
 
-    npm i
+```bash
+npm i
+```
 
 Build a minified version of Swagger Snippet (`swaggersnippet.min.js`):
 
-    npm run build
+```bash
+npm run build
+```
 
 ## Usage
 
 ### As a module
 
 ```javascript
-let SwaggerSnippet = require('swagger-snippet')
+const SwaggerSnippet = require('swagger-snippet')
 
 // define input:
-var swagger = ... // a Swagger / Open API specification
-var targets = ['node_unirest', 'c'] // array of targets for code snippets. See list below...
+const swagger = ... // a Swagger / Open API specification
+const targets = ['node_unirest', 'c'] // array of targets for code snippets. See list below...
 
 try {
   // either, get snippets for ALL endpoints:
-  var results = SwaggerSnippet.getSwaggerSnippets(swagger, targets) // results is now array of snippets, see "Output" below.
+  const results = SwaggerSnippet.getSwaggerSnippets(swagger, targets) // results is now array of snippets, see "Output" below.
 
   // ...or, get snippets for a single endpoint:
-  var results2 = SwaggerSnippet.getEndpointSnippets(swagger, '/users/{user-id}/relationship', 'get', targets)
+  const results2 = SwaggerSnippet.getEndpointSnippets(swagger, '/users/{user-id}/relationship', 'get', targets)
 } catch (err) {
   // do something with potential errors...
 }
@@ -43,7 +48,9 @@ try {
 
 Include the `swaggersnippet.min.js` file created after building the the library (see above) in your HTML page:
 
-    <script type="text/javascript" src="path/to/swaggersnippet.min.js"></script>
+```html
+<script type="text/javascript" src="path/to/swaggersnippet.min.js"></script>
+```
 
 Use Swagger Snippet, which now defines the global variable `SwaggerSnippet`.
 
@@ -55,7 +62,7 @@ If `getSwaggerSnippets` is used, an array of the above described objects is retu
 
 For example:
 
-```
+```json
 [
   ...
   {
