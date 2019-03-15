@@ -17,16 +17,16 @@
   "main": "index.js",
   "scripts": {
     "test": "node test/test.js | tap-spec",
-    "build": "browserify index.js | uglifyjs -c > swaggersnippet.min.js"
+    "build": "browserify -g uglifyify ./index.js > ./dist/swaggersnippet.min.js"
   },
   "dependencies": {
-    "httpsnippet": "^1.16.5",
+    "httpsnippet": "^1.16.7",
     "openapi-sampler": "^1.0.0-beta.14"
   },
   "devDependencies": {
-    "browserify": "^13.1.0",
-    "tap-spec": "^4.1.1",
-    "tape": "^4.6.0",
-    "uglifyify": "^3.0.3"
+    "browserify": "^16.2.3",
+    "tap-spec": "^5.0.0",
+    "tape": "^4.10.1",
+    "uglifyify": "^5.0.1"
   }
 }
