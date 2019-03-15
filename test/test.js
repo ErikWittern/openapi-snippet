@@ -9,6 +9,7 @@ var GithubSwagger = require('./github_swagger.json')
 var WatsonSwagger = require('./watson_alchemy_language_swagger.json')
 var IBMSwagger = require('./ibm_watson_alchemy_data_news_api.json')
 var PetStoreSwagger = require('./petstore_swagger.json')
+var PetstoreOas = require('./petstore_oas.json')
 
 test('Getting snippets should not result in error or undefined', function (t) {
   t.plan(1)
@@ -48,6 +49,13 @@ test('Getting snippets for endpoint should contain body', function (t) {
   var result = SwaggerSnippet.getEndpointSnippets(BloggerSwagger, '/blogs/{blogId}/pages', 'post', ['node_request'])
   t.true(/body/.test(result.snippets[0].content))
   t.true(/subPage/.test(result.snippets[0].content))
+})
+
+test('Getting snippets from OpenAPI 3.0.x shoudl work', function (t) {
+  t.plan(1)
+  // checks the 'Pages' schema...
+  var result = SwaggerSnippet.getEndpointSnippets(PetstoreOas, '/pets/{id}', 'get', ['node_request'])
+  t.notEqual(result, undefined)
 })
 
 test('Testing optionally provided parameter values', function (t) {
