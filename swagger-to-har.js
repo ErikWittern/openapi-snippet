@@ -247,20 +247,33 @@ var getHeadersArray = function (swagger, path, method) {
       }
     }
   } else if (typeof swagger.security !== 'undefined') {
+    // Need to check OAS 3.0 spec about type http and scheme
     for (var m in swagger.security) {
-      var overallSecScheme = Object.keys(swagger.security[m])[0]
-      var overallAuthType = swagger.securityDefinitions[overallSecScheme].type.toLowerCase()
-      switch (overallAuthType) {
+      var secScheme = Object.keys(swagger.security[m])[0]
+      var secDefinition = swagger.components.securitySchemes[secScheme];
+      var authType = secDefinition.type.toLowerCase();
+      let authScheme = secDefinition.scheme.toLowerCase();
+      switch (authType) {
+        case 'http':
+          switch(authScheme){
+            case 'bearer': 
+              oauthDef = secScheme
+              break
+            case 'basic':
+              basicAuthDef = secScheme
+              break
+          }
+          break
         case 'basic':
-          basicAuthDef = overallSecScheme
+          basicAuthDef = secScheme
           break
         case 'apikey':
-          if (swagger.securityDefinitions[overallSecScheme].in === 'query') {
-            apiKeyAuthDef = swagger.securityDefinitions[overallSecScheme]
+          if (secDefinition.in === 'header') {
+            apiKeyAuthDef = secDefinition
           }
           break
         case 'oauth2':
-          oauthDef = overallSecScheme
+          oauthDef = secScheme
           break
       }
     }
