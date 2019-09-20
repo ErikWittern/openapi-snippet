@@ -250,9 +250,11 @@ var getHeadersArray = function (swagger, path, method) {
     // Need to check OAS 3.0 spec about type http and scheme
     for (var m in swagger.security) {
       var secScheme = Object.keys(swagger.security[m])[0]
-      var secDefinition = swagger.components.securitySchemes[secScheme];
+      var secDefinition = swagger.securityDefinitions ?
+          swagger.securityDefinitions[secScheme] :
+          swagger.components.securitySchemes[secScheme];
       var authType = secDefinition.type.toLowerCase();
-      let authScheme = secDefinition.scheme.toLowerCase();
+      let authScheme = authType === 'http' ? secDefinition.scheme.toLowerCase(): '';
       switch (authType) {
         case 'http':
           switch(authScheme){
