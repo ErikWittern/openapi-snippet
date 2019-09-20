@@ -147,9 +147,6 @@ var getQueryStrings = function (swagger, path, method, values) {
         param = resolveRef(swagger, param['$ref'])
       }
       if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query') {
-        if (param.name === 'start_date') {
-          console.log(1)
-        }
         let value = 'SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE'
         if (typeof values[param.name] !== 'undefined') {
           value = values[param.name] + ''  /* adding a empty string to convert to string */
