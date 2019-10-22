@@ -143,7 +143,7 @@ var getQueryStrings = function (swagger, path, method, values) {
     for (var i in swagger.paths[path][method].parameters) {
       var param = swagger.paths[path][method].parameters[i]
       if (typeof param['$ref'] === 'string' &&
-        !/^http/.test(param['$ref'])) {
+        /^#/.test(param['$ref'])) {
         param = resolveRef(swagger, param['$ref'])
       }
       if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query') {
