@@ -27,6 +27,6 @@
     "browserify": "^16.2.3",
     "tap-spec": "^5.0.0",
     "tape": "^4.10.1",
-    "uglifyify": "^5.0.1"
+    "uglifyify": "^5.0.2"
   }
 }
