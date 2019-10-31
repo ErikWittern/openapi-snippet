@@ -146,6 +146,12 @@ var getQueryStrings = function (swagger, path, method, values) {
         /^#/.test(param['$ref'])) {
         param = resolveRef(swagger, param['$ref'])
       }
+      if (typeof param.schema !== 'undefined') {
+        if (typeof param.schema['$ref'] === 'string' &&
+          /^#/.test(param.schema['$ref'])) {
+          param.schema = resolveRef(swagger, param.schema['$ref'])
+        }
+      }
       if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query') {
         queryStrings.push({
           name: param.name,
