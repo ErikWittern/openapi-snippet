@@ -54,6 +54,8 @@ Include the `swaggersnippet.min.js` file created after building the the library 
 
 Use Swagger Snippet, which now defines the global variable `SwaggerSnippet`.
 
+### In CLI to produce OpenAPI 3.0 JSON enriched with code samples
+You can follow this repo [cdwv/oas3-api-snippet-enricher](https://github.com/cdwv/oas3-api-snippet-enricher/) where the authors make use of swagger-snippet to produce OpenAPI 3.0 JSON spec with ``x-code-sample`` entries for all methods. It's super simple.
 
 ## Output
 The output for every endpoint is an object, containing the `method`, `url`, a human-readable `description`, and the corresponding `resource` - all of these values stem from the specification. In addition, within the `snippets` list, an object containing a code snippet for every chosen target is provided. As of version `0.4.0`, the snippets include exemplary payload data.
