@@ -148,13 +148,17 @@ const getQueryStrings = function (openApi, path, method, values) {
         param = resolveRef(openApi, param['$ref'])
       }
       if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query') {
+        let value = 'SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE'
+        if (typeof values[param.name] !== 'undefined') {
+          value = values[param.name] + ''  /* adding a empty string to convert to string */
+        } else if (typeof param.default !== 'undefined') {
+          value = param.default + ''
+        } else if (typeof param.schema !== 'undefined' && typeof param.schema.example !== 'undefined') {
+          value = param.schema.example + ''
+        }
         queryStrings.push({
           name: param.name,
-          value: typeof values[param.name] === 'undefined'
-            ? (typeof param.default === 'undefined'
-              ? ('SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE')
-              : param.default + '')
-            : (values[param.name] + '') /* adding a empty string to convert to string */
+          value: value
         })
       }
     }
