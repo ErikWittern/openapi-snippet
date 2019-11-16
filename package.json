@@ -1,23 +1,23 @@
 {
-  "name": "swagger-snippet",
-  "version": "0.6.1",
-  "description": "Generates code snippets for given Swagger / Open API Specification files",
+  "name": "openapi-snippet",
+  "version": "0.7.0",
+  "description": "Generates code snippets from Open API (previously Swagger) documents.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ErikWittern/swagger-snippet"
+    "url": "https://github.com/ErikWittern/openapi-snippet"
   },
   "keywords": [
     "HTTP",
     "code snippets",
-    "Swagger",
-    "OpenAPI Specification"
+    "OpenAPI Specification",
+    "Swagger"
   ],
   "author": "Erik Wittern",
   "license": "MIT",
   "main": "index.js",
   "scripts": {
     "test": "node test/test.js | tap-spec",
-    "build": "browserify -g uglifyify ./index.js > ./dist/swaggersnippet.min.js"
+    "build": "mkdir -p dist && browserify -g uglifyify ./index.js > ./dist/openapisnippet.min.js"
   },
   "dependencies": {
     "httpsnippet": "^1.16.7",
