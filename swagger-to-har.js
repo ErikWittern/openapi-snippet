@@ -147,13 +147,17 @@ var getQueryStrings = function (swagger, path, method, values) {
         param = resolveRef(swagger, param['$ref'])
       }
       if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query') {
+        let value = 'SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE'
+        if (typeof values[param.name] !== 'undefined') {
+          value = values[param.name] + ''  /* adding a empty string to convert to string */
+        } else if (typeof param.default !== 'undefined') {
+          value = param.default + ''
+        } else if (typeof param.schema !== 'undefined' && typeof param.schema.example !== 'undefined') {
+          value = param.schema.example + ''
+        }
         queryStrings.push({
           name: param.name,
-          value: typeof values[param.name] === 'undefined'
-            ? (typeof param.default === 'undefined'
-              ? ('SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE')
-              : param.default + '')
-            : (values[param.name] + '') /* adding a empty string to convert to string */
+          value: value
         })
       }
     }
@@ -250,9 +254,11 @@ var getHeadersArray = function (swagger, path, method) {
     // Need to check OAS 3.0 spec about type http and scheme
     for (var m in swagger.security) {
       var secScheme = Object.keys(swagger.security[m])[0]
-      var secDefinition = swagger.components.securitySchemes[secScheme];
+      var secDefinition = swagger.securityDefinitions ?
+          swagger.securityDefinitions[secScheme] :
+          swagger.components.securitySchemes[secScheme];
       var authType = secDefinition.type.toLowerCase();
-      let authScheme = secDefinition.scheme.toLowerCase();
+      let authScheme = authType === 'http' ? secDefinition.scheme.toLowerCase(): '';
       switch (authType) {
         case 'http':
           switch(authScheme){
