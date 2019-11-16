@@ -1,5 +1,5 @@
 /**
- * Translates given Swagger 2.0 file to an array of HTTP Archive (HAR) 1.2 Request Object.
+ * Translates given OpenAPI document to an array of HTTP Archive (HAR) 1.2 Request Object.
  * See more:
  *  - http://swagger.io/specification/
  *  - http://www.softwareishard.com/blog/har-12-spec/#request
@@ -18,30 +18,31 @@
  *   "comment" : ""
  * }
  */
-var OpenAPISampler = require('openapi-sampler')
+const OpenAPISampler = require('openapi-sampler')
 
 /**
- * Create HAR Request object for path and method pair described in given swagger.
+ * Create HAR Request object for path and method pair described in given OpenAPI
+ * document.
  *
- * @param  {Object} swagger           Swagger document
+ * @param  {Object} openApi           OpenAPI document
  * @param  {string} path              Key of the path
  * @param  {string} method            Key of the method
  * @param  {Object} queryParamValues  Optional: Values for the query parameters if present
  * @return {Object}                   HAR Request object
  */
-var createHar = function (swagger, path, method, queryParamValues) {
+const createHar = function (openApi, path, method, queryParamValues) {
   // if the operational parameter is not provided, set it to empty object
   if (typeof queryParamValues === 'undefined') {
     queryParamValues = {}
   }
 
-  var baseUrl = getBaseUrl(swagger)
+  const baseUrl = getBaseUrl(openApi)
 
-  var har = {
+  const har = {
     method: method.toUpperCase(),
     url: baseUrl + path,
-    headers: getHeadersArray(swagger, path, method),
-    queryString: getQueryStrings(swagger, path, method, queryParamValues),
+    headers: getHeadersArray(openApi, path, method),
+    queryString: getQueryStrings(openApi, path, method, queryParamValues),
     httpVersion: 'HTTP/1.1',
     cookies: [],
     headersSize: 0,
@@ -49,7 +50,7 @@ var createHar = function (swagger, path, method, queryParamValues) {
   }
 
   // get payload data, if available:
-  var postData = getPayload(swagger, path, method)
+  const postData = getPayload(openApi, path, method)
   if (postData) har.postData = postData
 
   return har
@@ -60,19 +61,19 @@ var createHar = function (swagger, path, method, queryParamValues) {
  * given OAI specification. References within the payload definition are
  * resolved.
  *
- * @param  {object} swagger
+ * @param  {object} openApi
  * @param  {string} path
  * @param  {string} method
  * @return {object}
  */
-var getPayload = function (swagger, path, method) {
-  if (typeof swagger.paths[path][method].parameters !== 'undefined') {
-    for (var i in swagger.paths[path][method].parameters) {
-      var param = swagger.paths[path][method].parameters[i]
+const getPayload = function (openApi, path, method) {
+  if (typeof openApi.paths[path][method].parameters !== 'undefined') {
+    for (let i in openApi.paths[path][method].parameters) {
+      const param = openApi.paths[path][method].parameters[i]
       if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'body' &&
         typeof param.schema !== 'undefined') {
           try {
-            const sample = OpenAPISampler.sample(param.schema, {skipReadOnly: true}, swagger)
+            const sample = OpenAPISampler.sample(param.schema, {skipReadOnly: true}, openApi)
             return {
               mimeType: 'application/json',
               text: JSON.stringify(sample)
@@ -84,10 +85,10 @@ var getPayload = function (swagger, path, method) {
       }
     }
   }
-    if (swagger.paths[path][method].requestBody && swagger.paths[path][method].requestBody.content &&
-        swagger.paths[path][method].requestBody.content['application/json'] &&
-        swagger.paths[path][method].requestBody.content['application/json'].schema) {
-        const sample = OpenAPISampler.sample(swagger.paths[path][method].requestBody.content['application/json'].schema, {skipReadOnly: true}, swagger)
+    if (openApi.paths[path][method].requestBody && openApi.paths[path][method].requestBody.content &&
+        openApi.paths[path][method].requestBody.content['application/json'] &&
+        openApi.paths[path][method].requestBody.content['application/json'].schema) {
+        const sample = OpenAPISampler.sample(openApi.paths[path][method].requestBody.content['application/json'].schema, {skipReadOnly: true}, openApi)
         return {
             mimeType: 'application/json',
             text: JSON.stringify(sample)
@@ -97,54 +98,54 @@ var getPayload = function (swagger, path, method) {
 }
 
 /**
- * Gets the base URL constructed from the given swagger.
+ * Gets the base URL constructed from the given openApi.
  *
- * @param  {Object} swagger Swagger document
+ * @param  {Object} openApi OpenAPI document
  * @return {string}         Base URL
  */
-var getBaseUrl = function (swagger) {
-  if (swagger.servers)
-      return swagger.servers[0].url;
-  var baseUrl = ''
-  if (typeof swagger.schemes !== 'undefined') {
-    baseUrl += swagger.schemes[0]
+const getBaseUrl = function (openApi) {
+  if (openApi.servers)
+      return openApi.servers[0].url
+  let baseUrl = ''
+  if (typeof openApi.schemes !== 'undefined') {
+    baseUrl += openApi.schemes[0]
   } else {
     baseUrl += 'http'
   }
 
-  if (swagger.basePath === '/') {
-    baseUrl += '://' + swagger.host
+  if (openApi.basePath === '/') {
+    baseUrl += '://' + openApi.host
   } else {
-    baseUrl += '://' + swagger.host + swagger.basePath
+    baseUrl += '://' + openApi.host + openApi.basePath
   }
 
   return baseUrl
 }
 
 /**
- * Get array of objects describing the query parameters for a path and method pair
- * described in the given swagger.
+ * Get array of objects describing the query parameters for a path and method
+ * pair described in the given OpenAPI document.
  *
- * @param  {Object} swagger Swagger document
+ * @param  {Object} openApi OpenApi document
  * @param  {string} path    Key of the path
  * @param  {string} method  Key of the method
  * @param  {Object} values  Optional: query parameter values to use in the snippet if present
  * @return {array}          List of objects describing the query strings
  */
-var getQueryStrings = function (swagger, path, method, values) {
+const getQueryStrings = function (openApi, path, method, values) {
   // Set the optional parameter if it's not provided
   if (typeof values === 'undefined') {
     values = {}
   }
 
-  var queryStrings = []
+  const queryStrings = []
 
-  if (typeof swagger.paths[path][method].parameters !== 'undefined') {
-    for (var i in swagger.paths[path][method].parameters) {
-      var param = swagger.paths[path][method].parameters[i]
+  if (typeof openApi.paths[path][method].parameters !== 'undefined') {
+    for (let i in openApi.paths[path][method].parameters) {
+      let param = openApi.paths[path][method].parameters[i]
       if (typeof param['$ref'] === 'string' &&
         /^#/.test(param['$ref'])) {
-        param = resolveRef(swagger, param['$ref'])
+        param = resolveRef(openApi, param['$ref'])
       }
       if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query') {
         queryStrings.push({
@@ -164,22 +165,21 @@ var getQueryStrings = function (swagger, path, method, values) {
 
 /**
  * Get an array of objects describing the header for a path and method pair
- * described in the given swagger.
+ * described in the given OpenAPI document.
  *
- * @param  {Object} swagger Swagger document
+ * @param  {Object} openApi OpenAPI document
  * @param  {string} path    Key of the path
  * @param  {string} method  Key of the method
  * @return {array}          List of objects describing the header
  */
-var getHeadersArray = function (swagger, path, method) {
-  var headers = []
-
-  var pathObj = swagger.paths[path][method]
+const getHeadersArray = function (openApi, path, method) {
+  const headers = []
+  const pathObj = openApi.paths[path][method]
 
   // 'accept' header:
   if (typeof pathObj.consumes !== 'undefined') {
-    for (var i in pathObj.consumes) {
-      var type = pathObj.consumes[i]
+    for (let i in pathObj.consumes) {
+      const type = pathObj.consumes[i]
       headers.push({
         name: 'accept',
         value: type
@@ -189,8 +189,8 @@ var getHeadersArray = function (swagger, path, method) {
 
   // 'content-type' header:
   if (typeof pathObj.produces !== 'undefined') {
-    for (var j in pathObj.produces) {
-      var type2 = pathObj.produces[j]
+    for (let j in pathObj.produces) {
+      const type2 = pathObj.produces[j]
       headers.push({
         name: 'content-type',
         value: type2
@@ -210,8 +210,8 @@ var getHeadersArray = function (swagger, path, method) {
 
   // headers defined in path object:
   if (typeof pathObj.parameters !== 'undefined') {
-    for (var k in pathObj.parameters) {
-      var param = pathObj.parameters[k]
+    for (let k in pathObj.parameters) {
+      const param = pathObj.parameters[k]
       if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'header') {
         headers.push({
           name: param.name,
@@ -222,16 +222,16 @@ var getHeadersArray = function (swagger, path, method) {
   }
 
   // security:
-  var basicAuthDef
-  var apiKeyAuthDef
-  var oauthDef
+  let basicAuthDef
+  let apiKeyAuthDef
+  let oauthDef
   if (typeof pathObj.security !== 'undefined') {
     for (var l in pathObj.security) {
-      var secScheme = Object.keys(pathObj.security[l])[0]
-      var secDefinition = swagger.securityDefinitions ?
-        swagger.securityDefinitions[secScheme] :
-        swagger.components.securitySchemes[secScheme];
-      var authType = secDefinition.type.toLowerCase();
+      const secScheme = Object.keys(pathObj.security[l])[0]
+      const secDefinition = openApi.securityDefinitions ?
+        openApi.securityDefinitions[secScheme] :
+        openApi.components.securitySchemes[secScheme];
+      const authType = secDefinition.type.toLowerCase();
       switch (authType) {
         case 'basic':
           basicAuthDef = secScheme
@@ -246,12 +246,12 @@ var getHeadersArray = function (swagger, path, method) {
           break
       }
     }
-  } else if (typeof swagger.security !== 'undefined') {
+  } else if (typeof openApi.security !== 'undefined') {
     // Need to check OAS 3.0 spec about type http and scheme
-    for (var m in swagger.security) {
-      var secScheme = Object.keys(swagger.security[m])[0]
-      var secDefinition = swagger.components.securitySchemes[secScheme];
-      var authType = secDefinition.type.toLowerCase();
+    for (let m in openApi.security) {
+      const secScheme = Object.keys(openApi.security[m])[0]
+      const secDefinition = openApi.components.securitySchemes[secScheme];
+      const authType = secDefinition.type.toLowerCase();
       let authScheme = secDefinition.scheme.toLowerCase();
       switch (authType) {
         case 'http':
@@ -300,26 +300,26 @@ var getHeadersArray = function (swagger, path, method) {
 }
 
 /**
- * Produces array of HAR files for given Swagger document
+ * Produces array of HAR files for given OpenAPI document
  *
- * @param  {object}   swagger          A swagger document
+ * @param  {object}   openApi          OpenAPI document
  * @param  {Function} callback
  */
-var swaggerToHarList = function (swagger) {
+const openApiToHarList = function (openApi) {
   try {
     // determine basePath:
-    var baseUrl = getBaseUrl(swagger)
+    const baseUrl = getBaseUrl(openApi)
 
-    // iterate Swagger and create har objects:
-    var harList = []
-    for (var path in swagger.paths) {
-      for (var method in swagger.paths[path]) {
-        var url = baseUrl + path
-        var har = createHar(swagger, path, method)
+    // iterate openApi and create har objects:
+    const harList = []
+    for (let path in openApi.paths) {
+      for (let method in openApi.paths[path]) {
+        const url = baseUrl + path
+        const har = createHar(openApi, path, method)
         harList.push({
           method: method.toUpperCase(),
           url: url,
-          description: swagger.paths[path][method].description || 'No description available',
+          description: openApi.paths[path][method].description || 'No description available',
           har: har
         })
       }
@@ -334,27 +334,27 @@ var swaggerToHarList = function (swagger) {
 /**
  * Returns the value referenced in the given reference string
  *
- * @param  {object} oai
- * @param  {string} ref A reference string
+ * @param  {object} openApi  OpenAPI document
+ * @param  {string} ref      A reference string
  * @return {any}
  */
-var resolveRef = function (oai, ref) {
-  var parts = ref.split('/')
+const resolveRef = function (openApi, ref) {
+  const parts = ref.split('/')
 
   if (parts.length <= 1) return {} // = 3
 
-  var recursive = function (obj, index) {
+  const recursive = function (obj, index) {
     if (index + 1 < parts.length) { // index = 1
-      var newCount = index + 1
+      let newCount = index + 1
       return recursive(obj[parts[index]], newCount)
     } else {
       return obj[parts[index]]
     }
   }
-  return recursive(oai, 1)
+  return recursive(openApi, 1)
 }
 
 module.exports = {
-  getAll: swaggerToHarList,
+  getAll: openApiToHarList,
   getEndpoint: createHar
 }
