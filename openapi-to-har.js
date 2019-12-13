@@ -256,7 +256,11 @@ const getHeadersArray = function (openApi, path, method) {
       const secScheme = Object.keys(openApi.security[m])[0]
       const secDefinition = openApi.components.securitySchemes[secScheme];
       const authType = secDefinition.type.toLowerCase();
-      let authScheme = secDefinition.scheme.toLowerCase();
+      if(authType !== 'apikey'){
+        let authScheme = secDefinition.scheme.toLowerCase();
+      } else {
+        let authScheme = null;
+      }
       switch (authType) {
         case 'http':
           switch(authScheme){
