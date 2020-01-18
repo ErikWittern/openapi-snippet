@@ -146,6 +146,10 @@ const getQueryStrings = function (openApi, path, method, values) {
       if (typeof param['$ref'] === 'string' &&
         /^#/.test(param['$ref'])) {
         param = resolveRef(openApi, param['$ref'])
+      } else if ('schema' in param &&
+        typeof param.schema['$ref'] === 'string' &&
+        /^#/.test(param.schema['$ref'])) {
+        param.schema = resolveRef(openApi, param.schema['$ref'])
       }
       if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query') {
         let value = 'SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE'

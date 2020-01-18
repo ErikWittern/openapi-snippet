@@ -97,6 +97,40 @@ test('Referenced query parameters should be resolved', function (t) {
   t.end()
 })
 
+test('Referenced query parameters schemas should be resolved', function (t) {
+  const openAPI = {
+    'paths': {
+      '/users/{id}': {
+        'get': {
+          'parameters': [{
+            'name': 'email',
+            'in': 'query',
+            'required': false,
+            'schema': { '$ref': '#/components/schemas/SearchFilter' },
+            'example': 'marty.mcfly@example.com',
+            'description': 'Filter the results by a partial search of email.'
+          }]
+        }
+      }
+    },
+    'components': {
+      'schemas': {
+        'SearchFilter': {
+          'description': 'Filter a collection by a string search for one or more values',
+          'type': 'array',
+          'items': {
+            'type': 'string'
+          }
+        }
+      }
+    }
+  }
+  const result = OpenAPISnippets.getEndpointSnippets(openAPI, '/users/{id}', 'get', ['node_request'])
+  const snippet = result.snippets[0].content
+  t.true(/email/.test(snippet))
+  t.end()
+})
+
 test('Resolve samples from nested examples', function (t) {
   const result = OpenAPISnippets.getEndpointSnippets(PetStoreOpenAPI, '/user', 'post', ['node_request'])
   const snippet = result.snippets[0].content
