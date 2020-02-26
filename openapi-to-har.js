@@ -49,8 +49,15 @@ const createHar = function (openApi, path, method, queryParamValues) {
     bodySize: 0
   }
 
+  let contentType = har['headers'].filter(h => h.name == 'content-type').map(h => h.value)
+  if (contentType.length) {
+    contentType = contentType[0]
+  } else {
+    contentType = 'application/json'
+  }
+
   // get payload data, if available:
-  const postData = getPayload(openApi, path, method)
+  const postData = getPayload(openApi, path, method, contentType)
   if (postData) har.postData = postData
 
   return har
@@ -64,9 +71,10 @@ const createHar = function (openApi, path, method, queryParamValues) {
  * @param  {object} openApi
  * @param  {string} path
  * @param  {string} method
+ * @param  {string} contentType Must be a json-based content-type
  * @return {object}
  */
-const getPayload = function (openApi, path, method) {
+const getPayload = function (openApi, path, method, contentType) {
   if (typeof openApi.paths[path][method].parameters !== 'undefined') {
     for (let i in openApi.paths[path][method].parameters) {
       const param = openApi.paths[path][method].parameters[i]
@@ -75,7 +83,7 @@ const getPayload = function (openApi, path, method) {
           try {
             const sample = OpenAPISampler.sample(param.schema, {skipReadOnly: true}, openApi)
             return {
-              mimeType: 'application/json',
+              mimeType: contentType,
               text: JSON.stringify(sample)
             }
           } catch (err) {
@@ -86,11 +94,11 @@ const getPayload = function (openApi, path, method) {
     }
   }
     if (openApi.paths[path][method].requestBody && openApi.paths[path][method].requestBody.content &&
-        openApi.paths[path][method].requestBody.content['application/json'] &&
-        openApi.paths[path][method].requestBody.content['application/json'].schema) {
-        const sample = OpenAPISampler.sample(openApi.paths[path][method].requestBody.content['application/json'].schema, {skipReadOnly: true}, openApi)
+        openApi.paths[path][method].requestBody.content[contentType] &&
+        openApi.paths[path][method].requestBody.content[contentType].schema) {
+        const sample = OpenAPISampler.sample(openApi.paths[path][method].requestBody.content[contentType].schema, {skipReadOnly: true}, openApi)
         return {
-            mimeType: 'application/json',
+            mimeType: contentType,
             text: JSON.stringify(sample)
         }
     }
