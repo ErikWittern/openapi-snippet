@@ -236,6 +236,12 @@ const getHeadersArray = function (openApi, path, method) {
         openApi.securityDefinitions[secScheme] :
         openApi.components.securitySchemes[secScheme];
       const authType = secDefinition.type.toLowerCase();
+      let authScheme = null;
+
+      if(authType !== 'apikey' && secDefinition.scheme != null){
+        authScheme = secDefinition.scheme.toLowerCase();
+      }
+
       switch (authType) {
         case 'basic':
           basicAuthDef = secScheme
@@ -248,6 +254,16 @@ const getHeadersArray = function (openApi, path, method) {
         case 'oauth2':
           oauthDef = secScheme
           break
+        case 'http':
+          switch(authScheme){
+            case 'bearer':
+              oauthDef = secScheme
+              break
+            case 'basic':
+              basicAuthDef = secScheme
+              break
+          }
+          break
       }
     }
   } else if (typeof openApi.security !== 'undefined') {
@@ -259,7 +275,7 @@ const getHeadersArray = function (openApi, path, method) {
       let authScheme = null;
       
       if(authType !== 'apikey'){
-        let authScheme = secDefinition.scheme.toLowerCase();
+        authScheme = secDefinition.scheme.toLowerCase();
       }
       
       switch (authType) {
