@@ -10,6 +10,7 @@ const WatsonOpenAPI = require('./watson_alchemy_language_swagger.json')
 const IBMOpenAPI = require('./ibm_watson_alchemy_data_news_api.json')
 const PetStoreOpenAPI = require('./petstore_swagger.json')
 const PetStoreOpenAPI3 = require('./petstore_oas.json')
+const ParameterSchemaReferenceAPI = require('./parameter_schema_reference')
 
 test('Getting snippets should not result in error or undefined', function (t) {
   t.plan(1)
@@ -51,7 +52,7 @@ test('Getting snippets for endpoint should contain body', function (t) {
   t.true(/subPage/.test(result.snippets[0].content))
 })
 
-test('Getting snippets from OpenAPI 3.0.x shoudl work', function (t) {
+test('Getting snippets from OpenAPI 3.0.x should work', function (t) {
   t.plan(1)
   // checks the 'Pages' schema...
   const result = OpenAPISnippets.getEndpointSnippets(PetStoreOpenAPI3, '/pets/{id}', 'get', ['node_request'])
@@ -106,3 +107,10 @@ test('Resolve samples from nested examples', function (t) {
   t.true(/password.*drowssaP123/.test(snippet))
   t.end()
 })
+
+test('Parameters that are Schema References Are Dereferenced', function (t) {
+  const result = OpenAPISnippets.getEndpointSnippets(ParameterSchemaReferenceAPI, '/pets', 'post', ['node_request']);
+  const snippet = result.snippets[0].content;
+  t.true(/pet: 'SOME_OBJECT_VALUE'/.test(snippet))
+  t.end();
+});
