@@ -199,7 +199,7 @@ module.exports = {
 if (typeof window !== 'undefined') {
   // grab existing namespace object, or create a blank object
   // if it doesn't exist
-  const OpenAPISnippets = window.OpenAPISnippets || {}
+  let OpenAPISnippets = window.OpenAPISnippets || {}
 
   // define that object
   OpenAPISnippets = {
