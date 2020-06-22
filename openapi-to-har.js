@@ -40,7 +40,7 @@ const createHar = function (openApi, path, method, queryParamValues) {
 
   const har = {
     method: method.toUpperCase(),
-    url: baseUrl + path,
+    url: baseUrl + getFullPath(openApi, path),
     headers: getHeadersArray(openApi, path, method),
     queryString: getQueryStrings(openApi, path, method, queryParamValues),
     httpVersion: 'HTTP/1.1',
@@ -174,6 +174,33 @@ const getQueryStrings = function (openApi, path, method, values) {
   }
 
   return queryStrings
+}
+
+/**
+ * Return the path with the parameters example values used if specified.
+ *
+ * @param  {Object} openApi OpenApi document
+ * @param  {string} path    Key of the path
+ * @return {string}         Full path including example values
+ */
+const getFullPath = function (openApi, path) {
+  let fullPath = path
+
+  if (typeof openApi.paths[path].parameters !== 'undefined') {
+    for (let i in openApi.paths[path].parameters) {
+      let param = openApi.paths[path].parameters[i]
+      if (typeof param['$ref'] === 'string' &&
+        /^#/.test(param['$ref'])) {
+        param = resolveRef(openApi, param['$ref'])
+      }
+      if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'path') {
+        if (typeof param.example !== 'undefined') { // only if the schema has an example value
+          fullPath = fullPath.replace("{" + param.name + "}", param.example)
+        }
+      }
+    }
+  }
+  return fullPath
 }
 
 /**
