@@ -40,7 +40,7 @@ const createHar = function (openApi, path, method, queryParamValues) {
 
   const har = {
     method: method.toUpperCase(),
-    url: baseUrl + getFullPath(openApi, path),
+    url: baseUrl + getFullPath(openApi, path, method),
     headers: getHeadersArray(openApi, path, method),
     queryString: getQueryStrings(openApi, path, method, queryParamValues),
     httpVersion: 'HTTP/1.1',
@@ -181,14 +181,16 @@ const getQueryStrings = function (openApi, path, method, values) {
  *
  * @param  {Object} openApi OpenApi document
  * @param  {string} path    Key of the path
+ * @param  {string} method  Key of the method
  * @return {string}         Full path including example values
  */
-const getFullPath = function (openApi, path) {
+const getFullPath = function (openApi, path, method) {
   let fullPath = path
+  const parameters = openApi.paths[path].parameters || openApi.paths[path][method].parameters;
 
-  if (typeof openApi.paths[path].parameters !== 'undefined') {
-    for (let i in openApi.paths[path].parameters) {
-      let param = openApi.paths[path].parameters[i]
+  if (typeof parameters !== 'undefined') {
+    for (let i in parameters) {
+      let param = parameters[i]
       if (typeof param['$ref'] === 'string' &&
         /^#/.test(param['$ref'])) {
         param = resolveRef(openApi, param['$ref'])
