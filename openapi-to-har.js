@@ -85,6 +85,11 @@ const getPayload = function (openApi, path, method) {
       }
     }
   }
+  
+  if (openApi.paths[path][method].requestBody && openApi.paths[path][method].requestBody['$ref']) {
+    openApi.paths[path][method].requestBody = resolveRef(openApi, openApi.paths[path][method].requestBody['$ref']);
+  }
+
     if (openApi.paths[path][method].requestBody && openApi.paths[path][method].requestBody.content &&
         openApi.paths[path][method].requestBody.content['application/json'] &&
         openApi.paths[path][method].requestBody.content['application/json'].schema) {
