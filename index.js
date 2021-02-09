@@ -66,7 +66,7 @@ const getSnippets = function (openApi, targets) {
   for (let i in harList) {
     // create HTTPSnippet object:
     const har = harList[i]
-    const snippet = new HTTPSnippet(har.har)
+    const snippet = new HTTPSnippet(har.har, false)
 
     const snippets = []
     for (let j in targets) {
