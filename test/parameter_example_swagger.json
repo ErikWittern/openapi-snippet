@@ -22,16 +22,33 @@
   ],
   "paths": {
     "/pets": {
-      "post": {
-        "description": "Creates a new pet in the store.  Duplicates are allowed",
-        "operationId": "addPet",
+      "get": {
+        "description": "Get Pets from store",
+        "operationId": "getPet",
         "parameters": [
           {
+            "name": "tags",
             "in": "query",
-            "name": "pet",
-            "description": "Pet to add to the store",
+            "description": "tags to filter by",
+            "required": false,
+            "style": "form",
+            "example": ["dog", "cat"],
             "schema": {
-              "$ref": "#/components/schemas/NewPet"
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "maximum number of results to return",
+            "example": 10,
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
             }
           }
         ],
@@ -62,6 +79,22 @@
   },
   "components": {
     "schemas": {
+      "Pet": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NewPet"
+          },
+          {
+            "required": ["id"],
+            "properties": {
+              "id": {
+                "type": "integer",
+                "format": "int64"
+              }
+            }
+          }
+        ]
+      },
       "NewPet": {
         "required": ["name"],
         "properties": {
@@ -69,6 +102,18 @@
             "type": "string"
           },
           "tag": {
+            "type": "string"
+          }
+        }
+      },
+      "Error": {
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
             "type": "string"
           }
         }
