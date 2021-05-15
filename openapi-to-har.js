@@ -36,7 +36,7 @@ const createHar = function (openApi, path, method, queryParamValues) {
     queryParamValues = {}
   }
 
-  const baseUrl = getBaseUrl(openApi)
+  const baseUrl = getBaseUrl(openApi, path, method)
 
   const har = {
     method: method.toUpperCase(),
@@ -108,9 +108,14 @@ const getPayload = function (openApi, path, method) {
  * @param  {Object} openApi OpenAPI document
  * @return {string}         Base URL
  */
-const getBaseUrl = function (openApi) {
+const getBaseUrl = function (openApi, path, method) {
+  if (openApi.paths[path][method].servers)
+      return openApi.paths[path][method].servers[0].url
+  if (openApi.paths[path].servers)
+      return openApi.paths[path].servers[0].url
   if (openApi.servers)
       return openApi.servers[0].url
+
   let baseUrl = ''
   if (typeof openApi.schemes !== 'undefined') {
     baseUrl += openApi.schemes[0]
@@ -375,14 +380,11 @@ const getHeadersArray = function (openApi, path, method) {
  */
 const openApiToHarList = function (openApi) {
   try {
-    // determine basePath:
-    const baseUrl = getBaseUrl(openApi)
-
     // iterate openApi and create har objects:
     const harList = []
     for (let path in openApi.paths) {
       for (let method in openApi.paths[path]) {
-        const url = baseUrl + path
+        const url = getBaseUrl(openApi, path, method) + path
         const har = createHar(openApi, path, method)
         harList.push({
           method: method.toUpperCase(),
