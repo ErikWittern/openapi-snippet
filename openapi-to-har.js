@@ -157,22 +157,27 @@ const getBaseUrl = function (openApi, path, method) {
  * @param {Object} values Optional: query parameter values to use in the snippet if present
  * @returns {Object}      Object describing the parameters in a given OpenAPI method
  */
- const getParameterValues = function (param, values) {
-  let value = 'SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE'
+const getParameterValues = function (param, values) {
+  let value =
+    'SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE';
   if (values && typeof values[param.name] !== 'undefined') {
-    value = values[param.name] + ''  /* adding a empty string to convert to string */
+    value =
+      values[param.name] + ''; /* adding a empty string to convert to string */
   } else if (typeof param.default !== 'undefined') {
-    value = param.default + ''
-  } else if (typeof param.schema !== 'undefined' && typeof param.schema.example !== 'undefined') {
-    value = param.schema.example + ''
-  } else if (typeof param.example !== 'undefined'){
-    value = param.example + ''
+    value = param.default + '';
+  } else if (
+    typeof param.schema !== 'undefined' &&
+    typeof param.schema.example !== 'undefined'
+  ) {
+    value = param.schema.example + '';
+  } else if (typeof param.example !== 'undefined') {
+    value = param.example + '';
   }
   return {
     name: param.name,
-    value: value
-  }
-}
+    value: value,
+  };
+};
 
 /**
  * Get array of objects describing the query parameters for a path and method
@@ -214,7 +219,7 @@ const getQueryStrings = function (openApi, path, method, values) {
         typeof param.in !== 'undefined' &&
         param.in.toLowerCase() === 'query'
       ) {
-        queryStrings.push(getParameterValues(param, values))
+        queryStrings.push(getParameterValues(param, values));
       }
     }
   }
@@ -308,7 +313,7 @@ const getHeadersArray = function (openApi, path, method) {
         typeof param.in !== 'undefined' &&
         param.in.toLowerCase() === 'header'
       ) {
-        headers.push(getParameterValues(param))
+        headers.push(getParameterValues(param));
       }
     }
   }

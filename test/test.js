@@ -11,7 +11,7 @@ const IBMOpenAPI = require('./ibm_watson_alchemy_data_news_api.json');
 const PetStoreOpenAPI = require('./petstore_swagger.json');
 const PetStoreOpenAPI3 = require('./petstore_oas.json');
 const ParameterSchemaReferenceAPI = require('./parameter_schema_reference');
-const ParameterExampleReferenceAPI = require('./parameter_example_swagger.json')
+const ParameterExampleReferenceAPI = require('./parameter_example_swagger.json');
 
 test('Getting snippets should not result in error or undefined', function (t) {
   t.plan(1);
