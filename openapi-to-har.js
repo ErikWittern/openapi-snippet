@@ -152,6 +152,29 @@ const getBaseUrl = function (openApi, path, method) {
 };
 
 /**
+ * Gets an object describing the the paremeters (header or query) in a given OpenAPI method
+ * @param {Object} param  parameter values to use in snippet
+ * @param {Object} values Optional: query parameter values to use in the snippet if present
+ * @returns {Object}      Object describing the parameters in a given OpenAPI method
+ */
+ const getParameterValues = function (param, values) {
+  let value = 'SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE'
+  if (values && typeof values[param.name] !== 'undefined') {
+    value = values[param.name] + ''  /* adding a empty string to convert to string */
+  } else if (typeof param.default !== 'undefined') {
+    value = param.default + ''
+  } else if (typeof param.schema !== 'undefined' && typeof param.schema.example !== 'undefined') {
+    value = param.schema.example + ''
+  } else if (typeof param.example !== 'undefined'){
+    value = param.example + ''
+  }
+  return {
+    name: param.name,
+    value: value
+  }
+}
+
+/**
  * Get array of objects describing the query parameters for a path and method
  * pair described in the given OpenAPI document.
  *
@@ -191,24 +214,7 @@ const getQueryStrings = function (openApi, path, method, values) {
         typeof param.in !== 'undefined' &&
         param.in.toLowerCase() === 'query'
       ) {
-        let value =
-          'SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE';
-        if (typeof values[param.name] !== 'undefined') {
-          value =
-            values[param.name] +
-            ''; /* adding a empty string to convert to string */
-        } else if (typeof param.default !== 'undefined') {
-          value = param.default + '';
-        } else if (
-          typeof param.schema !== 'undefined' &&
-          typeof param.schema.example !== 'undefined'
-        ) {
-          value = param.schema.example + '';
-        }
-        queryStrings.push({
-          name: param.name,
-          value: value,
-        });
+        queryStrings.push(getParameterValues(param, values))
       }
     }
   }
@@ -302,13 +308,7 @@ const getHeadersArray = function (openApi, path, method) {
         typeof param.in !== 'undefined' &&
         param.in.toLowerCase() === 'header'
       ) {
-        headers.push({
-          name: param.name,
-          value:
-            'SOME_' +
-            (param.type || param.schema.type).toUpperCase() +
-            '_VALUE',
-        });
+        headers.push(getParameterValues(param))
       }
     }
   }
