@@ -58,6 +58,23 @@ test('Getting snippets from OpenAPI 3.0.x shoudl work', function (t) {
   t.notEqual(result, undefined)
 })
 
+test('Testing server overrides', function(t) {
+  t.plan(12)
+  const result = OpenAPISnippets.getSnippets(PetStoreOpenAPI3, ['c_libcurl'])
+  t.equal(result[0].url, "https://method-override.example.com/pets")
+  t.match(result[0].snippets[0].content, /.*method-override.example.com.*/)
+  t.doesNotMatch(result[0].snippets[0].content, /.*petstore.swagger.io.*/)
+  t.equal(result[1].url, "http://petstore.swagger.io/api/pets/{id}")
+  t.match(result[1].snippets[0].content, /.*petstore.swagger.io.*/)
+  t.doesNotMatch(result[1].snippets[0].content, /.*example.com.*/)
+  t.equal(result[2].url, "https://path-override.example.com/pets")
+  t.match(result[2].snippets[0].content, /.*path-override.example.com.*/)
+  t.doesNotMatch(result[2].snippets[0].content, /.*petstore.swagger.io.*/)
+  t.equal(result[3].url, "http://petstore.swagger.io/api/pets/{id}")
+  t.match(result[3].snippets[0].content, /.*petstore.swagger.io.*/)
+  t.doesNotMatch(result[3].snippets[0].content, /.*example.com.*/)
+})
+
 test('Testing optionally provided parameter values', function (t) {
   t.plan(2)
   // checks the 'Pages' schema...
