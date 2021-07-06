@@ -19,7 +19,6 @@
  * }
  */
 const OpenAPISampler = require('openapi-sampler');
-const QueryString = require('querystring');
 
 /**
  * Create HAR Request object for path and method pair described in given OpenAPI
@@ -135,14 +134,12 @@ const getPayload = function (openApi, path, method) {
       if (sample === undefined) return null;
 
       const params = [];
-      Object.entries(sample).forEach(([k,v]) => {
-        params.push({"name": k, "value": v});
-      })
+      Object.keys(sample).map(key => params.push({'name': key, 'value': sample[key]}));
 
       return {
         mimeType: 'application/x-www-form-urlencoded',
-        text: QueryString.stringify(sample),
-        params: params
+        params: params,
+        text: Object.keys(sample).map(key => key + '=' + sample[key]).join('&')
       };
     }
   }
