@@ -182,9 +182,10 @@ const getParameterValues = function (param, values) {
 /**
  * Parse parameter object into query string objects
  *
- * @param {Object} openApi OpenApi document
- * @param {Object} parameters Objects described in the document to parse into the query string 
- * @param  {Object} values  Optional: query parameter values to use in the snippet if present
+ * @param {Object} openApi    OpenApi document
+ * @param {Object} parameters Objects described in the document to parse into the query string
+ * @param  {Object} values    Optional: query parameter values to use in the snippet if present
+ * @return {array}            List of objects describing the query strings
 */
 const parseParametersToQuery = function (openApi, parameters, values) {
   const queryStrings = [];
@@ -213,7 +214,7 @@ const parseParametersToQuery = function (openApi, parameters, values) {
       queryStrings.push(getParameterValues(param, values));
     }
   }
-  
+
   return queryStrings;
 };
 
