@@ -75,6 +75,61 @@
           }
         }
       }
+    },
+    "/animals": {
+      "parameters": [
+        {
+          "name": "tags",
+          "in": "query",
+          "description": "tags to filter by",
+          "required": false,
+          "style": "form",
+          "example": ["dog", "cat"],
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "description": "maximum number of results to return",
+          "example": 10,
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      ],
+      "get": {
+        "description": "Get Pets from store",
+        "operationId": "getPet",
+        "responses": {
+          "200": {
+            "description": "pet response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pet"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

@@ -196,3 +196,16 @@ test('Testing the case when an example is provided, use the provided example val
   t.false(/SOME_INTEGER_VALUE/.test(snippet));
   t.end();
 });
+
+test('Query Params Defined for all methods should be resolved', function (t) {
+  const result = OpenAPISnippets.getEndpointSnippets(
+    ParameterExampleReferenceAPI,
+    '/animals',
+    'get',
+    ['node_request']
+  );
+  const snippet = result.snippets[0].content;
+  t.true(/ {tags: 'dog,cat', limit: '10'}/.test(snippet));
+  t.false(/SOME_INTEGER_VALUE/.test(snippet));
+  t.end();
+});

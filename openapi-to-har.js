@@ -180,6 +180,44 @@ const getParameterValues = function (param, values) {
 };
 
 /**
+ * Parse parameter object into query string objects
+ *
+ * @param {Object} openApi OpenApi document
+ * @param {Object} parameters Objects described in the document to parse into the query string 
+ * @param  {Object} values  Optional: query parameter values to use in the snippet if present
+*/
+const parseParametersToQuery = function (openApi, parameters, values) {
+  const queryStrings = [];
+
+  for (let i in parameters) {
+    let param = parameters[i];
+    if (typeof param['$ref'] === 'string' && /^#/.test(param['$ref'])) {
+      param = resolveRef(openApi, param['$ref']);
+    }
+    if (typeof param.schema !== 'undefined') {
+      if (
+        typeof param.schema['$ref'] === 'string' &&
+        /^#/.test(param.schema['$ref'])
+      ) {
+        param.schema = resolveRef(openApi, param.schema['$ref']);
+        if (typeof param.schema.type === 'undefined') {
+          // many schemas don't have an explicit type
+          param.schema.type = 'object';
+        }
+      }
+    }
+    if (
+      typeof param.in !== 'undefined' &&
+      param.in.toLowerCase() === 'query'
+    ) {
+      queryStrings.push(getParameterValues(param, values));
+    }
+  }
+  
+  return queryStrings;
+};
+
+/**
  * Get array of objects describing the query parameters for a path and method
  * pair described in the given OpenAPI document.
  *
@@ -197,31 +235,13 @@ const getQueryStrings = function (openApi, path, method, values) {
 
   const queryStrings = [];
 
+  // First get any parameters from the path
+  if (typeof openApi.paths[path].parameters !== 'undefined') {
+    queryStrings.push(...parseParametersToQuery(openApi, openApi.paths[path].parameters, values));
+  }
+
   if (typeof openApi.paths[path][method].parameters !== 'undefined') {
-    for (let i in openApi.paths[path][method].parameters) {
-      let param = openApi.paths[path][method].parameters[i];
-      if (typeof param['$ref'] === 'string' && /^#/.test(param['$ref'])) {
-        param = resolveRef(openApi, param['$ref']);
-      }
-      if (typeof param.schema !== 'undefined') {
-        if (
-          typeof param.schema['$ref'] === 'string' &&
-          /^#/.test(param.schema['$ref'])
-        ) {
-          param.schema = resolveRef(openApi, param.schema['$ref']);
-          if (typeof param.schema.type === 'undefined') {
-            // many schemas don't have an explicit type
-            param.schema.type = 'object';
-          }
-        }
-      }
-      if (
-        typeof param.in !== 'undefined' &&
-        param.in.toLowerCase() === 'query'
-      ) {
-        queryStrings.push(getParameterValues(param, values));
-      }
-    }
+    queryStrings.push(...parseParametersToQuery(openApi, openApi.paths[path][method].parameters, values));
   }
 
   return queryStrings;
