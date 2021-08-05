@@ -12,6 +12,7 @@ const PetStoreOpenAPI = require('./petstore_swagger.json');
 const PetStoreOpenAPI3 = require('./petstore_oas.json');
 const ParameterSchemaReferenceAPI = require('./parameter_schema_reference');
 const ParameterExampleReferenceAPI = require('./parameter_example_swagger.json');
+const FormDataExampleReferenceAPI = require('./form_data_example.json');
 
 test('Getting snippets should not result in error or undefined', function (t) {
   t.plan(1);
@@ -194,5 +195,18 @@ test('Testing the case when an example is provided, use the provided example val
   const snippet = result.snippets[0].content;
   t.true(/ {tags: 'dog,cat', limit: '10'}/.test(snippet));
   t.false(/SOME_INTEGER_VALUE/.test(snippet));
+  t.end();
+});
+
+test('Generate snippet with multipart/form-data', function (t) {
+  const result = OpenAPISnippets.getEndpointSnippets(
+    FormDataExampleReferenceAPI,
+    '/pets',
+    'patch',
+    ['node_request']
+  );
+  const snippet = result.snippets[0].content;
+  t.true(/boundary=---011000010111000001101001/.test(snippet));
+  t.true(/formData: {'pet\[name\]': 'string', 'pet\[tag\]': 'string'}/.test(snippet));
   t.end();
 });
