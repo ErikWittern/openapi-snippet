@@ -20,6 +20,11 @@
  */
 const OpenAPISampler = require('openapi-sampler');
 
+const parsableContentTypes = [
+ 'application/json',
+  'multipart/form-data'
+];
+
 /**
  * Create HAR Request object for path and method pair described in given OpenAPI
  * document.
@@ -28,7 +33,7 @@ const OpenAPISampler = require('openapi-sampler');
  * @param  {string} path              Key of the path
  * @param  {string} method            Key of the method
  * @param  {Object} queryParamValues  Optional: Values for the query parameters if present
- * @return {Object}                   HAR Request object
+ * @return {array}                    List of HAR Request objects for the endpoint
  */
 const createHar = function (openApi, path, method, queryParamValues) {
   // if the operational parameter is not provided, set it to empty object
@@ -38,7 +43,7 @@ const createHar = function (openApi, path, method, queryParamValues) {
 
   const baseUrl = getBaseUrl(openApi, path, method);
 
-  const har = {
+  const baseHar = {
     method: method.toUpperCase(),
     url: baseUrl + getFullPath(openApi, path, method),
     headers: getHeadersArray(openApi, path, method),
@@ -49,11 +54,26 @@ const createHar = function (openApi, path, method, queryParamValues) {
     bodySize: 0,
   };
 
-  // get payload data, if available:
-  const postData = getPayload(openApi, path, method);
-  if (postData) har.postData = postData;
+  let hars = [];
 
-  return har;
+  // get payload data, if available:
+  const postDatas = getPayloads(openApi, path, method);
+
+  // For each postData create a snippet
+  if (postDatas.length > 0) {
+    for (let i in postDatas) {
+      const postData = postDatas[i];
+      const copiedHar = JSON.parse(JSON.stringify(baseHar));
+      copiedHar.postData = postData;
+      copiedHar.comment = postData.mimeType;
+			copiedHar.headers.push({name: 'content-type', value: postData.mimeType});
+      hars.push(copiedHar);
+    }
+  } else {
+    hars = [baseHar]
+  }
+
+  return hars;
 };
 
 /**
@@ -64,9 +84,9 @@ const createHar = function (openApi, path, method, queryParamValues) {
  * @param  {object} openApi
  * @param  {string} path
  * @param  {string} method
- * @return {object}
+ * @return {array}  A list of payload objects
  */
-const getPayload = function (openApi, path, method) {
+const getPayloads = function (openApi, path, method) {
   if (typeof openApi.paths[path][method].parameters !== 'undefined') {
     for (let i in openApi.paths[path][method].parameters) {
       const param = openApi.paths[path][method].parameters[i];
@@ -81,10 +101,10 @@ const getPayload = function (openApi, path, method) {
             { skipReadOnly: true },
             openApi
           );
-          return {
+          return [{
             mimeType: 'application/json',
             text: JSON.stringify(sample),
-          };
+          }];
         } catch (err) {
           console.log(err);
           return null;
@@ -103,46 +123,38 @@ const getPayload = function (openApi, path, method) {
     );
   }
 
+  const payloads = [];
   if (
-     openApi.paths[path][method].requestBody &&
-     openApi.paths[path][method].requestBody.content
+    openApi.paths[path][method].requestBody &&
+    openApi.paths[path][method].requestBody.content
    ) {
-     if (openApi.paths[path][method].requestBody.content['application/json'] &&
-       openApi.paths[path][method].requestBody.content['application/json'].schema
-     ) {
-       const sample = OpenAPISampler.sample(
-         openApi.paths[path][method].requestBody.content['application/json']
-           .schema,
-         { skipReadOnly: true },
-         openApi
-       );
-       return {
-         mimeType: 'application/json',
-         text: JSON.stringify(sample)
-       };
-     }
+    for (const contentType of parsableContentTypes) {
+      if (openApi.paths[path][method].requestBody.content[contentType] &&
+        openApi.paths[path][method].requestBody.content[contentType].schema
+      ) {
+        const bodySchema = openApi.paths[path][method].requestBody.content[contentType].schema;
+        const sample = OpenAPISampler.sample(bodySchema, { skipReadOnly: true }, openApi);
 
-     if (openApi.paths[path][method].requestBody.content['multipart/form-data'] &&
-       openApi.paths[path][method].requestBody.content['multipart/form-data'].schema
-     ) {
-       const sample = OpenAPISampler.sample(openApi.paths[path][method].requestBody.content['multipart/form-data']
-           .schema,
-         {skipReadOnly: true},
-         openApi
-       );
+        if (sample === undefined) return null;
 
-       if (sample === undefined) return null;
+        if (contentType === 'application/json') {
+          payloads.push({
+            mimeType: contentType,
+            text: JSON.stringify((sample))
+          });
+        } else if (contentType === 'multipart/form-data') {
+          const params = [];
+          Object.keys(sample).map(key => params.push({'name': key, 'value': sample[key]}));
 
-       const params = [];
-       Object.keys(sample).map(key => params.push({'name': key, 'value': sample[key]}));
-
-       return {
-         mimeType: 'multipart/form-data',
-         params: params,
-       };
-     }
+          payloads.push({
+            mimeType: 'multipart/form-data',
+            params: params,
+          });
+        }
+      }
+    }
   }
-  return null;
+  return payloads;
 };
 
 /**
@@ -306,27 +318,6 @@ const getHeadersArray = function (openApi, path, method) {
     }
   }
 
-  // 'content-type' header:
-  if (typeof pathObj.produces !== 'undefined') {
-    for (let j in pathObj.produces) {
-      const type2 = pathObj.produces[j];
-      headers.push({
-        name: 'content-type',
-        value: type2,
-      });
-    }
-  }
-
-  // v3 'content-type' header:
-  if (pathObj.requestBody && pathObj.requestBody.content) {
-    for (const type3 of Object.keys(pathObj.requestBody.content)) {
-      headers.push({
-        name: 'content-type',
-        value: type3,
-      });
-    }
-  }
-
   // headers defined in path object:
   if (typeof pathObj.parameters !== 'undefined') {
     for (let k in pathObj.parameters) {
@@ -452,14 +443,15 @@ const openApiToHarList = function (openApi) {
     for (let path in openApi.paths) {
       for (let method in openApi.paths[path]) {
         const url = getBaseUrl(openApi, path, method) + path;
-        const har = createHar(openApi, path, method);
+        const hars = createHar(openApi, path, method);
+        // need to push multiple here
         harList.push({
           method: method.toUpperCase(),
           url: url,
           description:
             openApi.paths[path][method].description ||
             'No description available',
-          har: har,
+          hars: hars,
         });
       }
     }
