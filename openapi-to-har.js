@@ -147,7 +147,7 @@ const getPayloads = function (openApi, path, method) {
           Object.keys(sample).map(key => params.push({'name': key, 'value': sample[key]}));
 
           payloads.push({
-            mimeType: 'multipart/form-data',
+            mimeType: contentType, 
             params: params,
           });
         }
