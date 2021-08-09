@@ -144,7 +144,7 @@ const getPayloads = function (openApi, path, method) {
           });
         } else if (contentType === 'multipart/form-data') {
           const params = [];
-          Object.keys(sample).map(key => params.push({'name': key, 'value': sample[key]}));
+          Object.keys(sample).forEach(key => params.push({'name': key, 'value': sample[key]}));
 
           payloads.push({
             mimeType: contentType, 
