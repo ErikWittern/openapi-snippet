@@ -153,9 +153,9 @@ const getBaseUrl = function (openApi, path, method) {
 
 /**
  * Gets an object describing the the paremeters (header or query) in a given OpenAPI method
- * @param {Object} param  parameter values to use in snippet
- * @param {Object} values Optional: query parameter values to use in the snippet if present
- * @returns {Object}      Object describing the parameters in a given OpenAPI method
+ * @param  {Object} param  parameter values to use in snippet
+ * @param  {Object} values Optional: query parameter values to use in the snippet if present
+ * @return {Object}      Object describing the parameters in a given OpenAPI method
  */
 const getParameterValues = function (param, values) {
   let value =
@@ -182,8 +182,8 @@ const getParameterValues = function (param, values) {
 /**
  * Parse parameter object into query string objects
  *
- * @param {Object} openApi    OpenApi document
- * @param {Object} parameters Objects described in the document to parse into the query string
+ * @param  {Object} openApi    OpenApi document
+ * @param  {Object} parameters Objects described in the document to parse into the query string
  * @param  {Object} values    Optional: query parameter values to use in the snippet if present
  * @return {array}            List of objects describing the query strings
 */
