@@ -20,11 +20,6 @@
  */
 const OpenAPISampler = require('openapi-sampler');
 
-const parsableContentTypes = [
- 'application/json',
-  'multipart/form-data'
-];
-
 /**
  * Create HAR Request object for path and method pair described in given OpenAPI
  * document.
@@ -127,33 +122,33 @@ const getPayloads = function (openApi, path, method) {
   if (
     openApi.paths[path][method].requestBody &&
     openApi.paths[path][method].requestBody.content
-   ) {
-    for (const contentType of parsableContentTypes) {
-      if (openApi.paths[path][method].requestBody.content[contentType] &&
-        openApi.paths[path][method].requestBody.content[contentType].schema
-      ) {
-        const bodySchema = openApi.paths[path][method].requestBody.content[contentType].schema;
-        const sample = OpenAPISampler.sample(bodySchema, { skipReadOnly: true }, openApi);
-
-        if (sample === undefined) return null;
-
-        if (contentType === 'application/json') {
-          payloads.push({
-            mimeType: contentType,
-            text: JSON.stringify((sample))
-          });
-        } else if (contentType === 'multipart/form-data') {
-          const params = [];
-          Object.keys(sample).forEach(key => params.push({'name': key, 'value': sample[key]}));
-
-          payloads.push({
-            mimeType: contentType, 
-            params: params,
-          });
-        }
-      }
-    }
-  }
+  ) {
+		['application/json', 'multipart/form-data'].forEach((type) => {
+		  const content = openApi.paths[path][method].requestBody.content[type]
+		  if (content && content.schema) {
+		    const sample = OpenAPISampler.sample(
+		      content.schema,
+		      { skipReadOnly: true },
+		      openApi
+		    );
+		    if (type === 'application/json') {
+		      payloads.push({
+		        mimeType: type,
+		        text: JSON.stringify(sample)
+		      });
+		    } else if (type === 'multipart/form-data') {
+		      let params = [];
+		      if (sample !== undefined) {
+		        Object.keys(sample).forEach(key => params.push({'name': key, 'value': sample[key]}));
+		      	payloads.push({
+		      	  mimeType: type,
+		      	  params: params
+		      	});
+		      }
+		    }
+		  }
+		});
+	}
   return payloads;
 };
 
