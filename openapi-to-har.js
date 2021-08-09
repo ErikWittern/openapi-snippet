@@ -106,41 +106,41 @@ const getPayload = function (openApi, path, method) {
   if (
      openApi.paths[path][method].requestBody &&
      openApi.paths[path][method].requestBody.content
-   ) {
-     if (openApi.paths[path][method].requestBody.content['application/json'] &&
-       openApi.paths[path][method].requestBody.content['application/json'].schema
-     ) {
-       const sample = OpenAPISampler.sample(
-         openApi.paths[path][method].requestBody.content['application/json']
-           .schema,
-         { skipReadOnly: true },
-         openApi
-       );
-       return {
-         mimeType: 'application/json',
-         text: JSON.stringify(sample)
-       };
-     }
-
-     if (openApi.paths[path][method].requestBody.content['multipart/form-data'] &&
-       openApi.paths[path][method].requestBody.content['multipart/form-data'].schema
-     ) {
-       const sample = OpenAPISampler.sample(openApi.paths[path][method].requestBody.content['multipart/form-data']
-           .schema,
-         {skipReadOnly: true},
-         openApi
-       );
-
-       if (sample === undefined) return null;
-
-       const params = [];
-        Object.keys(sample).forEach(key => params.push({'name': key, 'value': sample[key]}));
-
-       return {
-         mimeType: 'multipart/form-data',
-         params: params,
-       };
-     }
+  ) {
+    if (openApi.paths[path][method].requestBody.content['application/json'] &&
+      openApi.paths[path][method].requestBody.content['application/json'].schema
+    ) {
+      const sample = OpenAPISampler.sample(
+        openApi.paths[path][method].requestBody.content['application/json']
+          .schema,
+        { skipReadOnly: true },
+        openApi
+      );
+      return {
+        mimeType: 'application/json',
+        text: JSON.stringify(sample)
+      };
+    }
+    
+    if (openApi.paths[path][method].requestBody.content['multipart/form-data'] &&
+      openApi.paths[path][method].requestBody.content['multipart/form-data'].schema
+    ) {
+      const sample = OpenAPISampler.sample(
+        openApi.paths[path][method].requestBody.content['multipart/form-data'].schema,
+        {skipReadOnly: true},
+        openApi
+      );
+    
+      if (sample === undefined) return null;
+    
+      const params = [];
+      Object.keys(sample).forEach(key => params.push({'name': key, 'value': sample[key]}));
+    
+      return {
+        mimeType: 'multipart/form-data',
+        params: params,
+      };
+    }
   }
   return null;
 };
