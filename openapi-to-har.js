@@ -134,12 +134,17 @@ const getPayload = function (openApi, path, method) {
       if (sample === undefined) return null;
 
       const params = [];
-      Object.keys(sample).map(key => params.push({'name': key, 'value': sample[key]}));
+      Object.keys(sample).map(
+        key => params.push({
+          'name': encodeURIComponent(key).replace('%20', '+'),
+          'value': encodeURIComponent(sample[key]).replace('%20', '+')
+        })
+      );
 
       return {
         mimeType: 'application/x-www-form-urlencoded',
         params: params,
-        text: Object.keys(sample).map(key => key + '=' + sample[key]).join('&')
+        text: Object.keys(params).map(key => key + '=' + sample[key]).join('&')
       };
     }
   }
