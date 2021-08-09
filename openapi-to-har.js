@@ -155,7 +155,7 @@ const getBaseUrl = function (openApi, path, method) {
  * Gets an object describing the the paremeters (header or query) in a given OpenAPI method
  * @param  {Object} param  parameter values to use in snippet
  * @param  {Object} values Optional: query parameter values to use in the snippet if present
- * @return {Object}      Object describing the parameters in a given OpenAPI method
+ * @return {Object}        Object describing the parameters in a given OpenAPI method or path
  */
 const getParameterValues = function (param, values) {
   let value =
@@ -184,11 +184,11 @@ const getParameterValues = function (param, values) {
  *
  * @param  {Object} openApi    OpenApi document
  * @param  {Object} parameters Objects described in the document to parse into the query string
- * @param  {Object} values    Optional: query parameter values to use in the snippet if present
- * @return {array}            List of objects describing the query strings
+ * @param  {Object} values     Optional: query parameter values to use in the snippet if present
+ * @return {Object}            Object describing the parameters for a method or path
 */
 const parseParametersToQuery = function (openApi, parameters, values) {
-  const queryStrings = [];
+  const queryStrings = {};
 
   for (let i in parameters) {
     let param = parameters[i];
@@ -211,7 +211,9 @@ const parseParametersToQuery = function (openApi, parameters, values) {
       typeof param.in !== 'undefined' &&
       param.in.toLowerCase() === 'query'
     ) {
-      queryStrings.push(getParameterValues(param, values));
+      // param.name is a safe key, because the spec defines
+      // that name MUST be unique
+      queryStrings[param.name] = getParameterValues(param, values)
     }
   }
 
@@ -234,18 +236,25 @@ const getQueryStrings = function (openApi, path, method, values) {
     values = {};
   }
 
-  const queryStrings = [];
+  let pathQueryStrings = {};
+  let methodQueryStrings = {};
 
   // First get any parameters from the path
   if (typeof openApi.paths[path].parameters !== 'undefined') {
-    queryStrings.push(...parseParametersToQuery(openApi, openApi.paths[path].parameters, values));
+    pathQueryStrings = parseParametersToQuery(openApi, openApi.paths[path].parameters, values);
   }
 
   if (typeof openApi.paths[path][method].parameters !== 'undefined') {
-    queryStrings.push(...parseParametersToQuery(openApi, openApi.paths[path][method].parameters, values));
+    methodQueryStrings = parseParametersToQuery(openApi, openApi.paths[path][method].parameters, values);
   }
 
-  return queryStrings;
+  // Merge query strings, with method overriding path
+  // from the spec:
+  // If a parameter is already defined at the Path Item, the new definition will override 
+  // it but can never remove it.
+  // https://swagger.io/specification/
+  const queryStrings = Object.assign(pathQueryStrings, methodQueryStrings);
+  return Object.values(queryStrings);
 };
 
 /**

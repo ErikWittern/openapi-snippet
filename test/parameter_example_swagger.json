@@ -130,6 +130,61 @@
           }
         }
       }
+    },
+    "/species": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "query",
+          "description": "the species id",
+          "required": false,
+          "example": 1, 
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "get": {
+        "description": "Get Pets from store",
+        "operationId": "getPet",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "A comma-seperated list of species IDs",
+            "required": false,
+            "example": [1, 2],
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "pet response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Species"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -158,6 +213,20 @@
           },
           "tag": {
             "type": "string"
+          }
+        }
+      },
+      "Species": {
+        "items": {
+          "$ref": "#/components/thing"
+        },
+        "type": "array"
+      },
+      "Thing": {
+        "required": ["id"],
+        "properties": {
+          "id": {
+            "type": "integer"
           }
         }
       },
