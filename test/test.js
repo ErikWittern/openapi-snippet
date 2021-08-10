@@ -207,7 +207,7 @@ test('Testing the application/x-www-form-urlencoded example case', function (t) 
     ['shell_curl']
   );
   const snippet = result.snippets[0].content;
-  t.match(snippet, /.*--data 'id=id\+example'.*/);
-  t.match(snippet, /.*--data 'secret=secret\+example'.*/);
+  t.match(snippet, /.*--data 'id=id\+example\+value'.*/);
+  t.match(snippet, /.*--data 'secret=secret\+example\+value'.*/);
   t.end();
 });

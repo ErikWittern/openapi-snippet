@@ -136,8 +136,8 @@ const getPayload = function (openApi, path, method) {
       const params = [];
       Object.keys(sample).map(
         key => params.push({
-          'name': encodeURIComponent(key).replace('%20', '+'),
-          'value': encodeURIComponent(sample[key]).replace('%20', '+')
+          'name': encodeURIComponent(key).replaceAll('%20', '+'),
+          'value': encodeURIComponent(sample[key]).replaceAll('%20', '+')
         })
       );
 

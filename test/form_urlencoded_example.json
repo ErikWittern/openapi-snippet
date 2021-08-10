@@ -26,11 +26,11 @@
                 "properties": {
                   "id": {
                     "type": "string",
-                    "example": "id example"
+                    "example": "id example value"
                   },
                   "secret": {
                     "type": "string",
-                    "example": "secret example"
+                    "example": "secret example value"
                   }
                 }
               }
