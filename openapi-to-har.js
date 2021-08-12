@@ -61,11 +61,14 @@ const createHar = function (openApi, path, method, queryParamValues) {
       const copiedHar = JSON.parse(JSON.stringify(baseHar));
       copiedHar.postData = postData;
       copiedHar.comment = postData.mimeType;
-      copiedHar.headers.push({name: 'content-type', value: postData.mimeType});
+      copiedHar.headers.push({
+        name: 'content-type',
+        value: postData.mimeType,
+      });
       hars.push(copiedHar);
     }
   } else {
-    hars = [baseHar]
+    hars = [baseHar];
   }
 
   return hars;
@@ -96,10 +99,12 @@ const getPayloads = function (openApi, path, method) {
             { skipReadOnly: true },
             openApi
           );
-          return [{
-            mimeType: 'application/json',
-            text: JSON.stringify(sample),
-          }];
+          return [
+            {
+              mimeType: 'application/json',
+              text: JSON.stringify(sample),
+            },
+          ];
         } catch (err) {
           console.log(err);
           return null;
@@ -124,7 +129,7 @@ const getPayloads = function (openApi, path, method) {
     openApi.paths[path][method].requestBody.content
   ) {
     ['application/json', 'multipart/form-data'].forEach((type) => {
-      const content = openApi.paths[path][method].requestBody.content[type]
+      const content = openApi.paths[path][method].requestBody.content[type];
       if (content && content.schema) {
         const sample = OpenAPISampler.sample(
           content.schema,
@@ -134,14 +139,17 @@ const getPayloads = function (openApi, path, method) {
         if (type === 'application/json') {
           payloads.push({
             mimeType: type,
-            text: JSON.stringify(sample)
+            text: JSON.stringify(sample),
           });
         } else if (type === 'multipart/form-data') {
           if (sample !== undefined) {
-            const params = Object.keys(sample).reduce((acc,key)=>acc.concat([{'name': key, 'value': sample[key]}]),[]);
+            const params = Object.keys(sample).reduce(
+              (acc, key) => acc.concat([{ name: key, value: sample[key] }]),
+              []
+            );
             payloads.push({
               mimeType: type,
-              params: params
+              params: params,
             });
           }
         }

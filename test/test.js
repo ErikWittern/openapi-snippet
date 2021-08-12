@@ -208,7 +208,9 @@ test('Generate snippet with multipart/form-data', function (t) {
   );
   const snippet = result.snippets[0].content;
   t.true(/boundary=---011000010111000001101001/.test(snippet));
-  t.true(/formData: {'pet\[name\]': 'string', 'pet\[tag\]': 'string'}/.test(snippet));
+  t.true(
+    /formData: {'pet\[name\]': 'string', 'pet\[tag\]': 'string'}/.test(snippet)
+  );
   t.end();
 });
 
@@ -220,14 +222,24 @@ test('Generate snippets with multiple content types', function (t) {
     ['node_request']
   );
   t.equal(result.snippets.length, 2);
-	for (const snippet of result.snippets) {
-		if (snippet.mimeType === 'application/json') {
-			t.true(/headers: {'content-type': 'application\/json'}/.test(snippet.content));
-			t.true(/body: {name: 'string', tag: 'string'}/.test(snippet.content));
-		} else if (snippet.mimeType === 'multipart/form-data') {
-			t.true(/headers: {'content-type': 'multipart\/form-data; boundary=---011000010111000001101001'}/.test(snippet.content));
-  		t.true(/formData: {'pet\[name\]': 'string', 'pet\[tag\]': 'string', 'pet\[picture\]': 'string'}/.test(snippet.content));
-		}
-	}
+  for (const snippet of result.snippets) {
+    if (snippet.mimeType === 'application/json') {
+      t.true(
+        /headers: {'content-type': 'application\/json'}/.test(snippet.content)
+      );
+      t.true(/body: {name: 'string', tag: 'string'}/.test(snippet.content));
+    } else if (snippet.mimeType === 'multipart/form-data') {
+      t.true(
+        /headers: {'content-type': 'multipart\/form-data; boundary=---011000010111000001101001'}/.test(
+          snippet.content
+        )
+      );
+      t.true(
+        /formData: {'pet\[name\]': 'string', 'pet\[tag\]': 'string', 'pet\[picture\]': 'string'}/.test(
+          snippet.content
+        )
+      );
+    }
+  }
   t.end();
-})
+});

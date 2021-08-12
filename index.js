@@ -33,7 +33,13 @@ const getEndpointSnippets = function (openApi, path, method, targets, values) {
   const snippets = [];
   for (const har of hars) {
     const snippet = new HTTPSnippet(har);
-    snippets.push(...getSnippetsForTargets(targets, snippet, (har.comment ? har.comment : undefined)));
+    snippets.push(
+      ...getSnippetsForTargets(
+        targets,
+        snippet,
+        har.comment ? har.comment : undefined
+      )
+    );
   }
 
   // use first element since method, url, and description
@@ -182,16 +188,16 @@ const formatTarget = function (targetStr) {
  *
  * @param targets {array}               List of language targets to generate code for
  * @param snippet {Object}              Snippet object from httpsnippet to convert into the target objects
- * @param mimeType {string | undefined} Additional information to add uniqueness to the produced snippets  
+ * @param mimeType {string | undefined} Additional information to add uniqueness to the produced snippets
  */
-const getSnippetsForTargets = function(targets, snippet, mimeType) {
+const getSnippetsForTargets = function (targets, snippet, mimeType) {
   const snippets = [];
   for (let j in targets) {
     const target = formatTarget(targets[j]);
     if (!target) throw new Error('Invalid target: ' + targets[j]);
     snippets.push({
       id: targets[j],
-      ...(mimeType !== undefined && {mimeType: mimeType}), 
+      ...(mimeType !== undefined && { mimeType: mimeType }),
       title: target.title,
       content: snippet.convert(
         target.language,
@@ -199,7 +205,7 @@ const getSnippetsForTargets = function(targets, snippet, mimeType) {
       ),
     });
   }
-  return snippets 
+  return snippets;
 };
 
 const capitalizeFirstLetter = function (string) {
