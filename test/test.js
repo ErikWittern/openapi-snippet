@@ -232,4 +232,4 @@ test('Snippet for Get with no parameters should work', function (t) {
   const snippet = result.snippets[0].content;
   t.false(/qs/.test(snippet));
   t.end();
-})
+});

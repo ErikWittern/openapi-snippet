@@ -138,7 +138,7 @@
           "in": "query",
           "description": "the species id",
           "required": false,
-          "example": 1, 
+          "example": 1,
           "schema": {
             "type": "integer"
           }

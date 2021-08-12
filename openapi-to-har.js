@@ -186,7 +186,7 @@ const getParameterValues = function (param, values) {
  * @param  {Object} parameters Objects described in the document to parse into the query string
  * @param  {Object} values     Optional: query parameter values to use in the snippet if present
  * @return {Object}            Object describing the parameters for a method or path
-*/
+ */
 const parseParametersToQuery = function (openApi, parameters, values) {
   const queryStrings = {};
 
@@ -207,13 +207,10 @@ const parseParametersToQuery = function (openApi, parameters, values) {
         }
       }
     }
-    if (
-      typeof param.in !== 'undefined' &&
-      param.in.toLowerCase() === 'query'
-    ) {
+    if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query') {
       // param.name is a safe key, because the spec defines
       // that name MUST be unique
-      queryStrings[param.name] = getParameterValues(param, values)
+      queryStrings[param.name] = getParameterValues(param, values);
     }
   }
 
@@ -241,16 +238,24 @@ const getQueryStrings = function (openApi, path, method, values) {
 
   // First get any parameters from the path
   if (typeof openApi.paths[path].parameters !== 'undefined') {
-    pathQueryStrings = parseParametersToQuery(openApi, openApi.paths[path].parameters, values);
+    pathQueryStrings = parseParametersToQuery(
+      openApi,
+      openApi.paths[path].parameters,
+      values
+    );
   }
 
   if (typeof openApi.paths[path][method].parameters !== 'undefined') {
-    methodQueryStrings = parseParametersToQuery(openApi, openApi.paths[path][method].parameters, values);
+    methodQueryStrings = parseParametersToQuery(
+      openApi,
+      openApi.paths[path][method].parameters,
+      values
+    );
   }
 
   // Merge query strings, with method overriding path
   // from the spec:
-  // If a parameter is already defined at the Path Item, the new definition will override 
+  // If a parameter is already defined at the Path Item, the new definition will override
   // it but can never remove it.
   // https://swagger.io/specification/
   const queryStrings = Object.assign(pathQueryStrings, methodQueryStrings);
