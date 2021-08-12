@@ -33,22 +33,11 @@ const getEndpointSnippets = function (openApi, path, method, targets, values) {
   const snippets = [];
   for (const har of hars) {
     const snippet = new HTTPSnippet(har);
-    for (let j in targets) {
-      const target = formatTarget(targets[j]);
-      if (!target) throw new Error('Invalid target: ' + targets[j]);
-      snippets.push({
-        id: targets[j],
-        mimeType: (har.comment ? har.comment : undefined),
-        title: target.title,
-        // add information to make unique
-        content: snippet.convert(
-          target.language,
-          typeof target.library !== 'undefined' ? target.library : null
-        ),
-      });
-    }
+    snippets.push(...getSnippetsForTargets(targets, snippet, (har.comment ? har.comment : undefined)));
   }
 
+  // use first element since method, url, and description
+  // are the same for all elements
   return {
     method: hars[0].method,
     url: hars[0].url,
@@ -75,20 +64,7 @@ const getSnippets = function (openApi, targets) {
     const snippets = [];
     for (const har of harInfo.hars) {
       const snippet = new HTTPSnippet(har);
-
-      for (let j in targets) {
-        const target = formatTarget(targets[j]);
-        if (!target) throw new Error('Invalid target: ' + targets[j]);
-        snippets.push({
-          id: targets[j],
-          mimeType: (har.comment ? har.comment : undefined),
-          title: target.title,
-          content: snippet.convert(
-            target.language,
-            typeof target.library !== 'undefined' ? target.library : null
-          ),
-        });
-      }
+      snippets.push(...getSnippetsForTargets(targets, snippet, har.comment));
     }
 
     results.push({
@@ -199,6 +175,31 @@ const formatTarget = function (targetStr) {
     language,
     library,
   };
+};
+
+/**
+ * Generate code snippets for each of the supplied targets
+ *
+ * @param targets {array}               List of language targets to generate code for
+ * @param snippet {Object}              Snippet object from httpsnippet to convert into the target objects
+ * @param mimeType {string | undefined} Additional information to add uniqueness to the produced snippets  
+ */
+const getSnippetsForTargets = function(targets, snippet, mimeType) {
+  const snippets = [];
+  for (let j in targets) {
+    const target = formatTarget(targets[j]);
+    if (!target) throw new Error('Invalid target: ' + targets[j]);
+    snippets.push({
+      id: targets[j],
+      ...(mimeType !== undefined && {mimeType: mimeType}), 
+      title: target.title,
+      content: snippet.convert(
+        target.language,
+        typeof target.library !== 'undefined' ? target.library : null
+      ),
+    });
+  }
+  return snippets 
 };
 
 const capitalizeFirstLetter = function (string) {
