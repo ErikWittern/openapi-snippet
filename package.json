@@ -1,6 +1,6 @@
 {
   "name": "openapi-snippet",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Generates code snippets from Open API (previously Swagger) documents.",
   "repository": {
     "type": "git",
