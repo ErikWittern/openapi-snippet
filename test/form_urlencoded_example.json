@@ -1,0 +1,40 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "Sample API",
+    "description": "A sample API to demonstrate x-www-form-encoded request body example"
+  },
+  "servers": [
+    {
+      "url": "http://auth.io/api"
+    }
+  ],
+  "paths": {
+    "/auth/token": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": ["id", "secret"],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "example": "id example value"
+                  },
+                  "secret": {
+                    "type": "string",
+                    "example": "secret example value"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

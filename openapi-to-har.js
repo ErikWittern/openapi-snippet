@@ -128,7 +128,11 @@ const getPayloads = function (openApi, path, method) {
     openApi.paths[path][method].requestBody &&
     openApi.paths[path][method].requestBody.content
   ) {
-    ['application/json', 'multipart/form-data'].forEach((type) => {
+    [
+      'application/json',
+      'application/x-www-form-urlencoded',
+      'multipart/form-data',
+    ].forEach((type) => {
       const content = openApi.paths[path][method].requestBody.content[type];
       if (content && content.schema) {
         const sample = OpenAPISampler.sample(
@@ -152,6 +156,24 @@ const getPayloads = function (openApi, path, method) {
               params: params,
             });
           }
+        } else if (type == 'application/x-www-form-urlencoded') {
+          if (sample === undefined) return null;
+
+          const params = [];
+          Object.keys(sample).map((key) =>
+            params.push({
+              name: encodeURIComponent(key).replace(/\%20/g, '+'),
+              value: encodeURIComponent(sample[key]).replace(/\%20/g, '+'),
+            })
+          );
+
+          payloads.push({
+            mimeType: 'application/x-www-form-urlencoded',
+            params: params,
+            text: Object.keys(params)
+              .map((key) => key + '=' + sample[key])
+              .join('&'),
+          });
         }
       }
     });
