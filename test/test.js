@@ -12,6 +12,7 @@ const PetStoreOpenAPI = require('./petstore_swagger.json');
 const PetStoreOpenAPI3 = require('./petstore_oas.json');
 const ParameterSchemaReferenceAPI = require('./parameter_schema_reference');
 const ParameterExampleReferenceAPI = require('./parameter_example_swagger.json');
+const FormUrlencodedExampleAPI = require('./form_urlencoded_example.json');
 
 test('Getting snippets should not result in error or undefined', function (t) {
   t.plan(1);
@@ -194,5 +195,19 @@ test('Testing the case when an example is provided, use the provided example val
   const snippet = result.snippets[0].content;
   t.true(/ {tags: 'dog,cat', limit: '10'}/.test(snippet));
   t.false(/SOME_INTEGER_VALUE/.test(snippet));
+  t.end();
+});
+
+test('Testing the application/x-www-form-urlencoded example case', function (t) {
+  t.plan(2);
+  const result = OpenAPISnippets.getEndpointSnippets(
+    FormUrlencodedExampleAPI,
+    '/auth/token',
+    'post',
+    ['shell_curl']
+  );
+  const snippet = result.snippets[0].content;
+  t.match(snippet, /.*--data 'id=id\+example\+value'.*/);
+  t.match(snippet, /.*--data 'secret=secret\+example\+value'.*/);
   t.end();
 });
