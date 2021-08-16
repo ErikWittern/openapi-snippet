@@ -105,21 +105,60 @@ const getPayload = function (openApi, path, method) {
 
   if (
     openApi.paths[path][method].requestBody &&
-    openApi.paths[path][method].requestBody.content &&
-    openApi.paths[path][method].requestBody.content['application/json'] &&
-    openApi.paths[path][method].requestBody.content['application/json'].schema
+    openApi.paths[path][method].requestBody.content
   ) {
-    const sample = OpenAPISampler.sample(
-      openApi.paths[path][method].requestBody.content['application/json']
-        .schema,
-      { skipReadOnly: true },
-      openApi
-    );
-    return {
-      mimeType: 'application/json',
-      text: JSON.stringify(sample),
-    };
+    if (
+      openApi.paths[path][method].requestBody.content['application/json'] &&
+      openApi.paths[path][method].requestBody.content['application/json'].schema
+    ) {
+      const sample = OpenAPISampler.sample(
+        openApi.paths[path][method].requestBody.content['application/json']
+          .schema,
+        { skipReadOnly: true },
+        openApi
+      );
+      return {
+        mimeType: 'application/json',
+        text: JSON.stringify(sample),
+      };
+    }
+
+    if (
+      openApi.paths[path][method].requestBody.content[
+        'application/x-www-form-urlencoded'
+      ] &&
+      openApi.paths[path][method].requestBody.content[
+        'application/x-www-form-urlencoded'
+      ].schema
+    ) {
+      const sample = OpenAPISampler.sample(
+        openApi.paths[path][method].requestBody.content[
+          'application/x-www-form-urlencoded'
+        ].schema,
+        { skipReadOnly: true },
+        openApi
+      );
+
+      if (sample === undefined) return null;
+
+      const params = [];
+      Object.keys(sample).map((key) =>
+        params.push({
+          name: encodeURIComponent(key).replace(/\%20/g, '+'),
+          value: encodeURIComponent(sample[key]).replace(/\%20/g, '+'),
+        })
+      );
+
+      return {
+        mimeType: 'application/x-www-form-urlencoded',
+        params: params,
+        text: Object.keys(params)
+          .map((key) => key + '=' + sample[key])
+          .join('&'),
+      };
+    }
   }
+
   return null;
 };
 
