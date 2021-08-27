@@ -73,6 +73,7 @@ For example:
     "snippets": [
       {
         "id": "node",
+        "mimeType": "application/json",  // Only set for methods with a request body
         "title": "Node + Native",
         "content": "var http = require(\"https\");\n\nvar options = {..."
       }

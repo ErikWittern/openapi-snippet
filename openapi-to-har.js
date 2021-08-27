@@ -28,7 +28,7 @@ const OpenAPISampler = require('openapi-sampler');
  * @param  {string} path              Key of the path
  * @param  {string} method            Key of the method
  * @param  {Object} queryParamValues  Optional: Values for the query parameters if present
- * @return {Object}                   HAR Request object
+ * @return {array}                    List of HAR Request objects for the endpoint
  */
 const createHar = function (openApi, path, method, queryParamValues) {
   // if the operational parameter is not provided, set it to empty object
@@ -38,7 +38,7 @@ const createHar = function (openApi, path, method, queryParamValues) {
 
   const baseUrl = getBaseUrl(openApi, path, method);
 
-  const har = {
+  const baseHar = {
     method: method.toUpperCase(),
     url: baseUrl + getFullPath(openApi, path, method),
     headers: getHeadersArray(openApi, path, method),
@@ -49,11 +49,29 @@ const createHar = function (openApi, path, method, queryParamValues) {
     bodySize: 0,
   };
 
-  // get payload data, if available:
-  const postData = getPayload(openApi, path, method);
-  if (postData) har.postData = postData;
+  let hars = [];
 
-  return har;
+  // get payload data, if available:
+  const postDatas = getPayloads(openApi, path, method);
+
+  // For each postData create a snippet
+  if (postDatas.length > 0) {
+    for (let i in postDatas) {
+      const postData = postDatas[i];
+      const copiedHar = JSON.parse(JSON.stringify(baseHar));
+      copiedHar.postData = postData;
+      copiedHar.comment = postData.mimeType;
+      copiedHar.headers.push({
+        name: 'content-type',
+        value: postData.mimeType,
+      });
+      hars.push(copiedHar);
+    }
+  } else {
+    hars = [baseHar];
+  }
+
+  return hars;
 };
 
 /**
@@ -64,9 +82,9 @@ const createHar = function (openApi, path, method, queryParamValues) {
  * @param  {object} openApi
  * @param  {string} path
  * @param  {string} method
- * @return {object}
+ * @return {array}  A list of payload objects
  */
-const getPayload = function (openApi, path, method) {
+const getPayloads = function (openApi, path, method) {
   if (typeof openApi.paths[path][method].parameters !== 'undefined') {
     for (let i in openApi.paths[path][method].parameters) {
       const param = openApi.paths[path][method].parameters[i];
@@ -81,10 +99,12 @@ const getPayload = function (openApi, path, method) {
             { skipReadOnly: true },
             openApi
           );
-          return {
-            mimeType: 'application/json',
-            text: JSON.stringify(sample),
-          };
+          return [
+            {
+              mimeType: 'application/json',
+              text: JSON.stringify(sample),
+            },
+          ];
         } catch (err) {
           console.log(err);
           return null;
@@ -103,63 +123,62 @@ const getPayload = function (openApi, path, method) {
     );
   }
 
+  const payloads = [];
   if (
     openApi.paths[path][method].requestBody &&
     openApi.paths[path][method].requestBody.content
   ) {
-    if (
-      openApi.paths[path][method].requestBody.content['application/json'] &&
-      openApi.paths[path][method].requestBody.content['application/json'].schema
-    ) {
-      const sample = OpenAPISampler.sample(
-        openApi.paths[path][method].requestBody.content['application/json']
-          .schema,
-        { skipReadOnly: true },
-        openApi
-      );
-      return {
-        mimeType: 'application/json',
-        text: JSON.stringify(sample),
-      };
-    }
+    [
+      'application/json',
+      'application/x-www-form-urlencoded',
+      'multipart/form-data',
+    ].forEach((type) => {
+      const content = openApi.paths[path][method].requestBody.content[type];
+      if (content && content.schema) {
+        const sample = OpenAPISampler.sample(
+          content.schema,
+          { skipReadOnly: true },
+          openApi
+        );
+        if (type === 'application/json') {
+          payloads.push({
+            mimeType: type,
+            text: JSON.stringify(sample),
+          });
+        } else if (type === 'multipart/form-data') {
+          if (sample !== undefined) {
+            const params = Object.keys(sample).reduce(
+              (acc, key) => acc.concat([{ name: key, value: sample[key] }]),
+              []
+            );
+            payloads.push({
+              mimeType: type,
+              params: params,
+            });
+          }
+        } else if (type == 'application/x-www-form-urlencoded') {
+          if (sample === undefined) return null;
 
-    if (
-      openApi.paths[path][method].requestBody.content[
-        'application/x-www-form-urlencoded'
-      ] &&
-      openApi.paths[path][method].requestBody.content[
-        'application/x-www-form-urlencoded'
-      ].schema
-    ) {
-      const sample = OpenAPISampler.sample(
-        openApi.paths[path][method].requestBody.content[
-          'application/x-www-form-urlencoded'
-        ].schema,
-        { skipReadOnly: true },
-        openApi
-      );
+          const params = [];
+          Object.keys(sample).map((key) =>
+            params.push({
+              name: encodeURIComponent(key).replace(/\%20/g, '+'),
+              value: encodeURIComponent(sample[key]).replace(/\%20/g, '+'),
+            })
+          );
 
-      if (sample === undefined) return null;
-
-      const params = [];
-      Object.keys(sample).map((key) =>
-        params.push({
-          name: encodeURIComponent(key).replace(/\%20/g, '+'),
-          value: encodeURIComponent(sample[key]).replace(/\%20/g, '+'),
-        })
-      );
-
-      return {
-        mimeType: 'application/x-www-form-urlencoded',
-        params: params,
-        text: Object.keys(params)
-          .map((key) => key + '=' + sample[key])
-          .join('&'),
-      };
-    }
+          payloads.push({
+            mimeType: 'application/x-www-form-urlencoded',
+            params: params,
+            text: Object.keys(params)
+              .map((key) => key + '=' + sample[key])
+              .join('&'),
+          });
+        }
+      }
+    });
   }
-
-  return null;
+  return payloads;
 };
 
 /**
@@ -358,27 +377,6 @@ const getHeadersArray = function (openApi, path, method) {
     }
   }
 
-  // 'content-type' header:
-  if (typeof pathObj.produces !== 'undefined') {
-    for (let j in pathObj.produces) {
-      const type2 = pathObj.produces[j];
-      headers.push({
-        name: 'content-type',
-        value: type2,
-      });
-    }
-  }
-
-  // v3 'content-type' header:
-  if (pathObj.requestBody && pathObj.requestBody.content) {
-    for (const type3 of Object.keys(pathObj.requestBody.content)) {
-      headers.push({
-        name: 'content-type',
-        value: type3,
-      });
-    }
-  }
-
   // headers defined in path object:
   if (typeof pathObj.parameters !== 'undefined') {
     for (let k in pathObj.parameters) {
@@ -504,14 +502,15 @@ const openApiToHarList = function (openApi) {
     for (let path in openApi.paths) {
       for (let method in openApi.paths[path]) {
         const url = getBaseUrl(openApi, path, method) + path;
-        const har = createHar(openApi, path, method);
+        const hars = createHar(openApi, path, method);
+        // need to push multiple here
         harList.push({
           method: method.toUpperCase(),
           url: url,
           description:
             openApi.paths[path][method].description ||
             'No description available',
-          har: har,
+          hars: hars,
         });
       }
     }

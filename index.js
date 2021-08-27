@@ -28,29 +28,27 @@ const getEndpointSnippets = function (openApi, path, method, targets, values) {
     values = {};
   }
 
-  const har = OpenAPIToHar.getEndpoint(openApi, path, method, values);
-
-  const snippet = new HTTPSnippet(har);
+  const hars = OpenAPIToHar.getEndpoint(openApi, path, method, values);
 
   const snippets = [];
-  for (let j in targets) {
-    const target = formatTarget(targets[j]);
-    if (!target) throw new Error('Invalid target: ' + targets[j]);
-    snippets.push({
-      id: targets[j],
-      title: target.title,
-      content: snippet.convert(
-        target.language,
-        typeof target.library !== 'undefined' ? target.library : null
-      ),
-    });
+  for (const har of hars) {
+    const snippet = new HTTPSnippet(har);
+    snippets.push(
+      ...getSnippetsForTargets(
+        targets,
+        snippet,
+        har.comment ? har.comment : undefined
+      )
+    );
   }
 
+  // use first element since method, url, and description
+  // are the same for all elements
   return {
-    method: har.method,
-    url: har.url,
-    description: har.description,
-    resource: getResourceName(har.url),
+    method: hars[0].method,
+    url: hars[0].url,
+    description: hars[0].description,
+    resource: getResourceName(hars[0].url),
     snippets: snippets,
   };
 };
@@ -63,33 +61,23 @@ const getEndpointSnippets = function (openApi, path, method, targets, values) {
  *                          ['cURL', 'Node']
  */
 const getSnippets = function (openApi, targets) {
-  const harList = OpenAPIToHar.getAll(openApi);
+  const endpointHarInfoList = OpenAPIToHar.getAll(openApi);
 
   const results = [];
-  for (let i in harList) {
+  for (let i in endpointHarInfoList) {
     // create HTTPSnippet object:
-    const har = harList[i];
-    const snippet = new HTTPSnippet(har.har);
-
+    const harInfo = endpointHarInfoList[i];
     const snippets = [];
-    for (let j in targets) {
-      const target = formatTarget(targets[j]);
-      if (!target) throw new Error('Invalid target: ' + targets[j]);
-      snippets.push({
-        id: targets[j],
-        title: target.title,
-        content: snippet.convert(
-          target.language,
-          typeof target.library !== 'undefined' ? target.library : null
-        ),
-      });
+    for (const har of harInfo.hars) {
+      const snippet = new HTTPSnippet(har);
+      snippets.push(...getSnippetsForTargets(targets, snippet, har.comment));
     }
 
     results.push({
-      method: har.method,
-      url: har.url,
-      description: har.description,
-      resource: getResourceName(har.url),
+      method: harInfo.method,
+      url: harInfo.url,
+      description: harInfo.description,
+      resource: getResourceName(harInfo.url),
       snippets,
     });
   }
@@ -193,6 +181,31 @@ const formatTarget = function (targetStr) {
     language,
     library,
   };
+};
+
+/**
+ * Generate code snippets for each of the supplied targets
+ *
+ * @param targets {array}               List of language targets to generate code for
+ * @param snippet {Object}              Snippet object from httpsnippet to convert into the target objects
+ * @param mimeType {string | undefined} Additional information to add uniqueness to the produced snippets
+ */
+const getSnippetsForTargets = function (targets, snippet, mimeType) {
+  const snippets = [];
+  for (let j in targets) {
+    const target = formatTarget(targets[j]);
+    if (!target) throw new Error('Invalid target: ' + targets[j]);
+    snippets.push({
+      id: targets[j],
+      ...(mimeType !== undefined && { mimeType: mimeType }),
+      title: target.title,
+      content: snippet.convert(
+        target.language,
+        typeof target.library !== 'undefined' ? target.library : null
+      ),
+    });
+  }
+  return snippets;
 };
 
 const capitalizeFirstLetter = function (string) {
