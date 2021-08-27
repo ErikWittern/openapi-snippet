@@ -245,6 +245,43 @@ test('Generate snippets with multiple content types', function (t) {
   t.end();
 });
 
+test('Query Params Defined for all methods should be resolved', function (t) {
+  const result = OpenAPISnippets.getEndpointSnippets(
+    ParameterExampleReferenceAPI,
+    '/animals',
+    'get',
+    ['node_request']
+  );
+  const snippet = result.snippets[0].content;
+  t.true(/ {tags: 'dog,cat', limit: '10'}/.test(snippet));
+  t.false(/SOME_INTEGER_VALUE/.test(snippet));
+  t.end();
+});
+
+test('Query Params Defined for all methods are overriden by method definitions', function (t) {
+  const result = OpenAPISnippets.getEndpointSnippets(
+    ParameterExampleReferenceAPI,
+    '/species',
+    'get',
+    ['node_request']
+  );
+  const snippet = result.snippets[0].content;
+  t.true(/ qs: {id: '1,2'}/.test(snippet));
+  t.end();
+});
+
+test('Snippet for Get with no parameters should work', function (t) {
+  const result = OpenAPISnippets.getEndpointSnippets(
+    InstagramOpenAPI,
+    '/media/popular',
+    'get',
+    ['node_request']
+  );
+  const snippet = result.snippets[0].content;
+  t.false(/qs/.test(snippet));
+  t.end();
+});
+
 test('Testing the application/x-www-form-urlencoded example case', function (t) {
   t.plan(2);
   const result = OpenAPISnippets.getEndpointSnippets(

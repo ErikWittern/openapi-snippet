@@ -211,9 +211,9 @@ const getBaseUrl = function (openApi, path, method) {
 
 /**
  * Gets an object describing the the paremeters (header or query) in a given OpenAPI method
- * @param {Object} param  parameter values to use in snippet
- * @param {Object} values Optional: query parameter values to use in the snippet if present
- * @returns {Object}      Object describing the parameters in a given OpenAPI method
+ * @param  {Object} param  parameter values to use in snippet
+ * @param  {Object} values Optional: query parameter values to use in the snippet if present
+ * @return {Object}        Object describing the parameters in a given OpenAPI method or path
  */
 const getParameterValues = function (param, values) {
   let value =
@@ -238,6 +238,44 @@ const getParameterValues = function (param, values) {
 };
 
 /**
+ * Parse parameter object into query string objects
+ *
+ * @param  {Object} openApi    OpenApi document
+ * @param  {Object} parameters Objects described in the document to parse into the query string
+ * @param  {Object} values     Optional: query parameter values to use in the snippet if present
+ * @return {Object}            Object describing the parameters for a method or path
+ */
+const parseParametersToQuery = function (openApi, parameters, values) {
+  const queryStrings = {};
+
+  for (let i in parameters) {
+    let param = parameters[i];
+    if (typeof param['$ref'] === 'string' && /^#/.test(param['$ref'])) {
+      param = resolveRef(openApi, param['$ref']);
+    }
+    if (typeof param.schema !== 'undefined') {
+      if (
+        typeof param.schema['$ref'] === 'string' &&
+        /^#/.test(param.schema['$ref'])
+      ) {
+        param.schema = resolveRef(openApi, param.schema['$ref']);
+        if (typeof param.schema.type === 'undefined') {
+          // many schemas don't have an explicit type
+          param.schema.type = 'object';
+        }
+      }
+    }
+    if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query') {
+      // param.name is a safe key, because the spec defines
+      // that name MUST be unique
+      queryStrings[param.name] = getParameterValues(param, values);
+    }
+  }
+
+  return queryStrings;
+};
+
+/**
  * Get array of objects describing the query parameters for a path and method
  * pair described in the given OpenAPI document.
  *
@@ -253,36 +291,33 @@ const getQueryStrings = function (openApi, path, method, values) {
     values = {};
   }
 
-  const queryStrings = [];
+  let pathQueryStrings = {};
+  let methodQueryStrings = {};
 
-  if (typeof openApi.paths[path][method].parameters !== 'undefined') {
-    for (let i in openApi.paths[path][method].parameters) {
-      let param = openApi.paths[path][method].parameters[i];
-      if (typeof param['$ref'] === 'string' && /^#/.test(param['$ref'])) {
-        param = resolveRef(openApi, param['$ref']);
-      }
-      if (typeof param.schema !== 'undefined') {
-        if (
-          typeof param.schema['$ref'] === 'string' &&
-          /^#/.test(param.schema['$ref'])
-        ) {
-          param.schema = resolveRef(openApi, param.schema['$ref']);
-          if (typeof param.schema.type === 'undefined') {
-            // many schemas don't have an explicit type
-            param.schema.type = 'object';
-          }
-        }
-      }
-      if (
-        typeof param.in !== 'undefined' &&
-        param.in.toLowerCase() === 'query'
-      ) {
-        queryStrings.push(getParameterValues(param, values));
-      }
-    }
+  // First get any parameters from the path
+  if (typeof openApi.paths[path].parameters !== 'undefined') {
+    pathQueryStrings = parseParametersToQuery(
+      openApi,
+      openApi.paths[path].parameters,
+      values
+    );
   }
 
-  return queryStrings;
+  if (typeof openApi.paths[path][method].parameters !== 'undefined') {
+    methodQueryStrings = parseParametersToQuery(
+      openApi,
+      openApi.paths[path][method].parameters,
+      values
+    );
+  }
+
+  // Merge query strings, with method overriding path
+  // from the spec:
+  // If a parameter is already defined at the Path Item, the new definition will override
+  // it but can never remove it.
+  // https://swagger.io/specification/
+  const queryStrings = Object.assign(pathQueryStrings, methodQueryStrings);
+  return Object.values(queryStrings);
 };
 
 /**
