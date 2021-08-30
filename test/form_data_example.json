@@ -57,6 +57,80 @@
           }
         }
       }
+    },
+    "/pets/{id}/updatetags": {
+      "patch": {
+        "description": "Updates tags on a specific pet",
+        "operationId": "updatePetTags",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTags"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "pet response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pet"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pets/{id}/feedingschedule": {
+      "patch": {
+        "description": "Updates feeding schedule for specific pet",
+        "operationId": "updatePetFeedingSchedule",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFeedingSchedule"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "pet response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pet"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -68,6 +142,31 @@
           },
           "pet[tag]": {
             "type": "string"
+          }
+        }
+      },
+      "UpdateTags": {
+        "properties": {
+          "pet[tags]": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "UpdateFeedingSchedule": {
+        "properties": {
+          "pet[feedingSchedule]": {
+            "type": "object",
+            "properties": {
+              "time": {
+                "type": "string"
+              },
+              "food": {
+                "type": "string"
+              }
+            }
           }
         }
       }

@@ -147,10 +147,14 @@ const getPayloads = function (openApi, path, method) {
           });
         } else if (type === 'multipart/form-data') {
           if (sample !== undefined) {
-            const params = Object.keys(sample).reduce(
-              (acc, key) => acc.concat([{ name: key, value: sample[key] }]),
-              []
-            );
+            const params = [];
+            Object.keys(sample).forEach((key) => {
+              let value = sample[key];
+              if (typeof sample[key] !== 'string') {
+                value = JSON.stringify(sample[key]);
+              }
+              params.push({ name: key, value: value });
+            });
             payloads.push({
               mimeType: type,
               params: params,
