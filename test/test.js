@@ -215,6 +215,36 @@ test('Generate snippet with multipart/form-data', function (t) {
   t.end();
 });
 
+test('Generate snippet with multipart/form-data with array', function (t) {
+  const result = OpenAPISnippets.getEndpointSnippets(
+    FormDataExampleReferenceAPI,
+    '/pets/{id}/updatetags',
+    'patch',
+    ['node_request']
+  );
+  const snippet = result.snippets[0].content;
+  t.true(/boundary=---011000010111000001101001/.test(snippet));
+  t.true(/formData: {'pet\[tags\]': '\["string"\]'}/.test(snippet));
+  t.end();
+});
+
+test('Generate snippet with multipart/form-data with object', function (t) {
+  const result = OpenAPISnippets.getEndpointSnippets(
+    FormDataExampleReferenceAPI,
+    '/pets/{id}/feedingschedule',
+    'patch',
+    ['node_request']
+  );
+  const snippet = result.snippets[0].content;
+  t.true(/boundary=---011000010111000001101001/.test(snippet));
+  t.true(
+    /formData: {'pet\[feedingSchedule\]': '{"time":"string","food":"string"}'}/.test(
+      snippet
+    )
+  );
+  t.end();
+});
+
 test('Generate snippets with multiple content types', function (t) {
   const result = OpenAPISnippets.getEndpointSnippets(
     MultipleRequestContentReferenceAPI,
