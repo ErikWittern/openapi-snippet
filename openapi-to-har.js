@@ -541,13 +541,24 @@ const resolveRef = function (openApi, ref) {
     if (index + 1 < parts.length) {
       // index = 1
       let newCount = index + 1;
-      return recursive(obj[parts[index]], newCount);
+      return recursive(obj[replaceCharacter(parts[index])], newCount);
     } else {
-      return obj[parts[index]];
+      return obj[replaceCharacter(parts[index])];
     }
   };
   return recursive(openApi, 1);
 };
+
+/**
+ * Replace escape character
+ * https://swagger.io/docs/specification/using-ref/
+ * 
+ * @param  {string} refParts      A reference string
+ * @return {string}
+ */
+const replaceCharacter = function (refParts) {
+  return refParts.replaceAll('~0', '~').replaceAll('~1', '/');
+}
 
 module.exports = {
   getAll: openApiToHarList,
