@@ -84,10 +84,11 @@ For example:
 ```
 
 ## Targets
-Currently, OpenAPI Snippet supports the following targets (depending on the HTTP Snippet library):
+Currently, OpenAPI Snippet supports the following [targets](https://github.com/Kong/httpsnippet/tree/master/src/targets) (depending on the HTTP Snippet library):
 
 * `c_libcurl` (default)
 * `csharp_restsharp` (default)
+* `csharp_httpclient`
 * `go_native` (default)
 * `java_okhttp`
 * `java_unirest` (default)
