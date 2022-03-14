@@ -30,8 +30,11 @@ const getEndpointSnippets = function (openApi, path, method, targets, values) {
 
   const hars = OpenAPIToHar.getEndpoint(openApi, path, method, values);
 
-  const snippets = [];
+  console.log(hars);
+
+  let results = [];
   for (const har of hars) {
+    const snippets = [];
     const snippet = new HTTPSnippet(har);
     snippets.push(
       ...getSnippetsForTargets(
@@ -40,17 +43,25 @@ const getEndpointSnippets = function (openApi, path, method, targets, values) {
         har.comment ? har.comment : undefined
       )
     );
+
+    // check if multiple content types
+    let result = results.find((result) => result.url === har.url);
+    if (result) {
+      result.snippets.push(...snippets);
+      continue;
+    }
+
+    // push for multiple servers
+    results.push({
+      method: har.method,
+      url: har.url,
+      description: har.description,
+      resource: getResourceName(har.url),
+      snippets: snippets,
+    });
   }
 
-  // use first element since method, url, and description
-  // are the same for all elements
-  return {
-    method: hars[0].method,
-    url: hars[0].url,
-    description: hars[0].description,
-    resource: getResourceName(hars[0].url),
-    snippets: snippets,
-  };
+  return results;
 };
 
 /**
@@ -67,29 +78,35 @@ const getSnippets = function (openApi, targets) {
   for (let i in endpointHarInfoList) {
     // create HTTPSnippet object:
     const harInfo = endpointHarInfoList[i];
-    const snippets = [];
+    // create a new harlist array for each endpoint
+    let harList = [];
     for (const har of harInfo.hars) {
+      const snippets = [];
       const snippet = new HTTPSnippet(har);
       snippets.push(...getSnippetsForTargets(targets, snippet, har.comment));
+      harList.push({
+        method: har.method,
+        url: har.url,
+        description: har.description,
+        resource: getResourceName(har.url),
+        snippets,
+      });
     }
-
-    results.push({
-      method: harInfo.method,
-      url: harInfo.url,
-      description: harInfo.description,
-      resource: getResourceName(harInfo.url),
-      snippets,
-    });
+    // push snippets of each har corresponding to different servers
+    results.push(harList);
   }
 
   // sort results:
   results.sort((a, b) => {
-    if (a.resource < b.resource) {
+    if (a[0].resource < b[0].resource) {
       return -1;
-    } else if (a.resource > b.resource) {
+    } else if (a[0].resource > b[0].resource) {
       return 1;
     } else {
-      return getMethodOrder(a.method.toLowerCase(), b.method.toLowerCase());
+      return getMethodOrder(
+        a[0].method.toLowerCase(),
+        b[0].method.toLowerCase()
+      );
     }
   });
 

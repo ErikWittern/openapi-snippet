@@ -36,40 +36,42 @@ const createHar = function (openApi, path, method, queryParamValues) {
     queryParamValues = {};
   }
 
-  const baseUrl = getBaseUrl(openApi, path, method);
-
-  const baseHar = {
-    method: method.toUpperCase(),
-    url: baseUrl + getFullPath(openApi, path, method),
-    headers: getHeadersArray(openApi, path, method),
-    queryString: getQueryStrings(openApi, path, method, queryParamValues),
-    httpVersion: 'HTTP/1.1',
-    cookies: [],
-    headersSize: 0,
-    bodySize: 0,
-  };
+  const baseUrls = getBaseUrl(openApi, path, method);
 
   let hars = [];
 
-  // get payload data, if available:
-  const postDatas = getPayloads(openApi, path, method);
+  baseUrls.forEach((baseUrl) => {
+    const baseHar = {
+      method: method.toUpperCase(),
+      url: baseUrl + getFullPath(openApi, path, method),
+      headers: getHeadersArray(openApi, path, method),
+      queryString: getQueryStrings(openApi, path, method, queryParamValues),
+      httpVersion: 'HTTP/1.1',
+      cookies: [],
+      headersSize: 0,
+      bodySize: 0,
+    };
 
-  // For each postData create a snippet
-  if (postDatas.length > 0) {
-    for (let i in postDatas) {
-      const postData = postDatas[i];
-      const copiedHar = JSON.parse(JSON.stringify(baseHar));
-      copiedHar.postData = postData;
-      copiedHar.comment = postData.mimeType;
-      copiedHar.headers.push({
-        name: 'content-type',
-        value: postData.mimeType,
-      });
-      hars.push(copiedHar);
+    // get payload data, if available:
+    const postDatas = getPayloads(openApi, path, method);
+
+    // For each postData create a snippet
+    if (postDatas.length > 0) {
+      for (let i in postDatas) {
+        const postData = postDatas[i];
+        const copiedHar = JSON.parse(JSON.stringify(baseHar));
+        copiedHar.postData = postData;
+        copiedHar.comment = postData.mimeType;
+        copiedHar.headers.push({
+          name: 'content-type',
+          value: postData.mimeType,
+        });
+        hars.push(copiedHar);
+      }
+    } else {
+      hars.push(baseHar);
     }
-  } else {
-    hars = [baseHar];
-  }
+  });
 
   return hars;
 };
@@ -193,9 +195,10 @@ const getPayloads = function (openApi, path, method) {
  */
 const getBaseUrl = function (openApi, path, method) {
   if (openApi.paths[path][method].servers)
-    return openApi.paths[path][method].servers[0].url;
-  if (openApi.paths[path].servers) return openApi.paths[path].servers[0].url;
-  if (openApi.servers) return openApi.servers[0].url;
+    return openApi.paths[path][method].servers.map((server) => server.url);
+  if (openApi.paths[path].servers)
+    return openApi.paths[path].servers.map((server) => server.url);
+  if (openApi.servers) return openApi.servers.map((server) => server.url);
 
   let baseUrl = '';
   if (typeof openApi.schemes !== 'undefined') {
@@ -210,7 +213,7 @@ const getBaseUrl = function (openApi, path, method) {
     baseUrl += '://' + openApi.host + openApi.basePath;
   }
 
-  return baseUrl;
+  return [baseUrl];
 };
 
 /**
@@ -503,14 +506,12 @@ const openApiToHarList = function (openApi) {
   try {
     // iterate openApi and create har objects:
     const harList = [];
+
     for (let path in openApi.paths) {
       for (let method in openApi.paths[path]) {
-        const url = getBaseUrl(openApi, path, method) + path;
         const hars = createHar(openApi, path, method);
-        // need to push multiple here
+        // use hars from createHar for each server endpoint
         harList.push({
-          method: method.toUpperCase(),
-          url: url,
           description:
             openApi.paths[path][method].description ||
             'No description available',
@@ -518,7 +519,6 @@ const openApiToHarList = function (openApi) {
         });
       }
     }
-
     return harList;
   } catch (e) {
     console.log(e);
