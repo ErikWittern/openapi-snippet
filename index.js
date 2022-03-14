@@ -30,8 +30,6 @@ const getEndpointSnippets = function (openApi, path, method, targets, values) {
 
   const hars = OpenAPIToHar.getEndpoint(openApi, path, method, values);
 
-  console.log(hars);
-
   let results = [];
   for (const har of hars) {
     const snippets = [];
