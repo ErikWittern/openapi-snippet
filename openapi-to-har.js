@@ -21,6 +21,26 @@
 const OpenAPISampler = require('openapi-sampler');
 
 /**
+ * Looks at the first entry in examples and if it has a value of type string, it returns that.
+ *
+ * If the object is empty, or the first entry has a value whose type is not a string, then the
+ * defaultValue is returned.
+ *
+ * @param {Object} examples      An OpenAPI Examples object
+ * @param {string} defaultValue  The default value to use for the parameter if no suitable value found
+ * @return {string}              A suitable value from examples object, else defaultValue
+ */
+const getParameterValueFromExamples = function (examples, defaultValue) {
+  if (examples && typeof examples === 'object') {
+    const values = Object.values(examples);
+    if (values.length > 0 && typeof values[0].value === 'string') {
+      return values[0].value;
+    }
+  }
+  return defaultValue;
+};
+
+/**
  * Create HAR Request object for path and method pair described in given OpenAPI
  * document.
  *
@@ -214,7 +234,7 @@ const getBaseUrl = function (openApi, path, method) {
 };
 
 /**
- * Gets an object describing the the paremeters (header or query) in a given OpenAPI method
+ * Gets an object describing the the parameters (header or query) in a given OpenAPI method
  * @param  {Object} param  parameter values to use in snippet
  * @param  {Object} values Optional: query parameter values to use in the snippet if present
  * @return {Object}        Object describing the parameters in a given OpenAPI method or path
@@ -234,6 +254,8 @@ const getParameterValues = function (param, values) {
     value = param.schema.example + '';
   } else if (typeof param.example !== 'undefined') {
     value = param.example + '';
+  } else if (typeof param.examples !== 'undefined') {
+    value = getParameterValueFromExamples(param.examples, value);
   }
   return {
     name: param.name,
@@ -350,6 +372,12 @@ const getFullPath = function (openApi, path, method) {
         if (typeof param.example !== 'undefined') {
           // only if the schema has an example value
           fullPath = fullPath.replace('{' + param.name + '}', param.example);
+        } else if (typeof param.examples !== 'undefined') {
+          const defaultValue = '{' + param.name + '}';
+          fullPath = fullPath.replace(
+            defaultValue,
+            getParameterValueFromExamples(param.examples, defaultValue)
+          );
         }
       }
     }
