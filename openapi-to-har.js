@@ -21,6 +21,24 @@
 const OpenAPISampler = require('openapi-sampler');
 
 /**
+ * If example has an array value, then returns the first value in that array as the example;
+ * else this just returns example.
+ * @param {*} example
+ * @returns
+ */
+const getParameterValueFromExample = function (example) {
+  if (Array.isArray(example)) {
+    // just return the first entry since there are multiple ways to model
+    // an array as a query parameter.
+    if (example.length > 0) {
+      return example[0] + '';
+    }
+  }
+
+  return example + '';
+};
+
+/**
  * Looks at the first entry in examples and if it has a value of type string, it returns that.
  *
  * If the object is empty, or the first entry has a value whose type is not a string, then the
@@ -33,8 +51,11 @@ const OpenAPISampler = require('openapi-sampler');
 const getParameterValueFromExamples = function (examples, defaultValue) {
   if (examples && typeof examples === 'object') {
     const values = Object.values(examples);
-    if (values.length > 0 && typeof values[0].value === 'string') {
-      return values[0].value;
+
+    if (values.length > 0 && typeof values[0].value !== 'undefined') {
+      const potentialValue = values[0].value;
+
+      return getParameterValueFromExample(potentialValue, defaultValue);
     }
   }
   return defaultValue;
@@ -234,7 +255,7 @@ const getBaseUrl = function (openApi, path, method) {
 };
 
 /**
- * Gets an object describing the the parameters (header or query) in a given OpenAPI method
+ * Gets an object describing the parameters (header or query) in a given OpenAPI method
  * @param  {Object} param  parameter values to use in snippet
  * @param  {Object} values Optional: query parameter values to use in the snippet if present
  * @return {Object}        Object describing the parameters in a given OpenAPI method or path
@@ -251,9 +272,9 @@ const getParameterValues = function (param, values) {
     typeof param.schema !== 'undefined' &&
     typeof param.schema.example !== 'undefined'
   ) {
-    value = param.schema.example + '';
+    value = getParameterValueFromExample(param.schema.example);
   } else if (typeof param.example !== 'undefined') {
-    value = param.example + '';
+    value = getParameterValueFromExample(param.example);
   } else if (typeof param.examples !== 'undefined') {
     value = getParameterValueFromExamples(param.examples, value);
   }
@@ -371,7 +392,10 @@ const getFullPath = function (openApi, path, method) {
       ) {
         if (typeof param.example !== 'undefined') {
           // only if the schema has an example value
-          fullPath = fullPath.replace('{' + param.name + '}', param.example);
+          fullPath = fullPath.replace(
+            '{' + param.name + '}',
+            getParameterValueFromExample(param.example)
+          );
         } else if (typeof param.examples !== 'undefined') {
           const defaultValue = '{' + param.name + '}';
           fullPath = fullPath.replace(
