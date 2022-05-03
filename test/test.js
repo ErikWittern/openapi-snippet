@@ -15,6 +15,7 @@ const ParameterExampleReferenceAPI = require('./parameter_example_swagger.json')
 const FormDataExampleReferenceAPI = require('./form_data_example.json');
 const FormUrlencodedExampleAPI = require('./form_urlencoded_example.json');
 const MultipleRequestContentReferenceAPI = require('./multiple_request_content.json');
+const ParameterVariationsAPI = require('./parameter_variations_swagger.json');
 
 test('Getting snippets should not result in error or undefined', function (t) {
   t.plan(1);
@@ -192,7 +193,7 @@ test('Testing the case when an example is provided, use the provided example val
     ParameterExampleReferenceAPI,
     '/pets',
     'get',
-    ['node_request']
+    ['node_request', 'shell_curl']
   );
   const snippet = result.snippets[0].content;
   t.true(/ {tags: 'dog,cat', limit: '10'}/.test(snippet));
@@ -325,3 +326,747 @@ test('Testing the application/x-www-form-urlencoded example case', function (t) 
   t.match(snippet, /.*--data 'secret=secret\+example\+value'.*/);
   t.end();
 });
+
+const resetParameterValues = function (
+  parameter,
+  value,
+  locationOfParameter,
+  locationOfExample,
+  style,
+  explode
+) {
+  if (typeof style === 'undefined') {
+    delete parameter.style;
+  } else {
+    parameter.style = style;
+  }
+  if (typeof explode === 'undefined') {
+    delete parameter.explode;
+  } else {
+    parameter.explode = explode;
+  }
+  delete parameter.default;
+  delete parameter.example;
+  delete parameter.examples;
+
+  parameter.in = locationOfParameter;
+
+  if (locationOfExample === 'default') {
+    parameter.default = value;
+  } else if (locationOfExample === 'example') {
+    parameter.example = value;
+  } else if (locationOfExample === 'examples') {
+    parameter.examples = {
+      firstExample: {
+        summary: 'This is a summary',
+        value,
+      },
+    };
+  }
+};
+
+const runParameterTestScenario = function (
+  t,
+  api,
+  path,
+  method,
+  expectedString
+) {
+  const result = OpenAPISnippets.getEndpointSnippets(api, path, method, [
+    'shell_curl',
+  ]);
+  const snippet = result.snippets[0].content;
+  t.true(expectedString.test(snippet));
+};
+
+const runParameterTest = function (t, options) {
+  const {
+    api,
+    path,
+    method,
+    locationOfParameter,
+    parameterName,
+    value,
+    locationOfExample,
+    style,
+    explode,
+    expectedString,
+  } = options;
+
+  const apiCopy = JSON.parse(JSON.stringify(api));
+  const parameters = apiCopy.paths[path][method].parameters;
+  const parameter = parameters.find((p) => p.name === parameterName);
+  resetParameterValues(
+    parameter,
+    value,
+    locationOfParameter,
+    locationOfExample,
+    style,
+    explode
+  );
+  const result = OpenAPISnippets.getEndpointSnippets(apiCopy, path, method, [
+    'node_request',
+  ]);
+  const snippet = result.snippets[0].content;
+  t.true(
+    expectedString.test(snippet),
+    `expected '${expectedString}' in '${snippet}'`
+  );
+};
+
+// Primitive Query Parameter Tests
+
+test('Parameter in query, no style, no explode, default value 75', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'default',
+    style: undefined,
+    explode: undefined,
+    value: 75,
+    expectedString: /id: '75'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, form style, no explode, default value 75', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'default',
+    style: 'form',
+    explode: undefined,
+    value: 75,
+    expectedString: /id: '75'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, simple style, no explode, default value 75', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'default',
+    style: 'simple',
+    explode: undefined,
+    value: 75,
+    expectedString: /id: '75'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, no style, no explode, example value 75', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'example',
+    style: undefined,
+    explode: undefined,
+    value: 75,
+    expectedString: /id: '75'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, form style, no explode, example value 75', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'example',
+    style: 'form',
+    explode: undefined,
+    value: 75,
+    expectedString: /id: '75'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, simple style, no explode, example value 75', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'example',
+    style: 'simple',
+    explode: undefined,
+    value: 75,
+    expectedString: /id: '75'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, no style, no explode, examples value 75', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'examples',
+    style: undefined,
+    explode: undefined,
+    value: 75,
+    expectedString: /id: '75'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, form style, no explode, examples value 75', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'examples',
+    style: 'form',
+    explode: undefined,
+    value: 75,
+    expectedString: /id: '75'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, simple style, no explode, examples value 75', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'examples',
+    style: 'simple',
+    explode: undefined,
+    value: 75,
+    expectedString: /id: '75'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+// Array Query Parameter Tests - Default Value
+
+test('Parameter in query, no style (defaults form), no explode (defaults true), default value [75, 23]', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'default',
+    style: undefined,
+    explode: undefined,
+    value: [75, 23],
+    expectedString: /id: \['75', '23']/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, form style, no explode (defaults true), default value [75, 23]', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'default',
+    style: 'form',
+    explode: undefined,
+    value: [75, 23],
+    expectedString: /id: \['75', '23']/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, form style, no explode (defaults true), default value [75, 23]', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'default',
+    style: 'form',
+    explode: undefined,
+    value: [75, 23],
+    expectedString: /id: \['75', '23']/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, form style, explode true, default value [75, 23]', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'default',
+    style: 'form',
+    explode: true,
+    value: [75, 23],
+    expectedString: /id: \['75', '23']/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, simple style, no explode (ignored), default value [75,23]', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'default',
+    style: 'simple',
+    explode: undefined,
+    value: [75, 23],
+    expectedString: /id: '75,23'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, simple style, explode true (ignored), default value [75,23]', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'default',
+    style: 'simple',
+    explode: true,
+    value: [75, 23],
+    expectedString: /id: '75,23'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+// Array Query Parameter Tests - Example Value
+
+test('Parameter in query, no style (defaults form), no explode (defaults true), default value [75, 23]', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'example',
+    style: undefined,
+    explode: undefined,
+    value: [75, 23],
+    expectedString: /id: \['75', '23']/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, form style, no explode (defaults true), default value [75, 23]', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'example',
+    style: 'form',
+    explode: undefined,
+    value: [75, 23],
+    expectedString: /id: \['75', '23']/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, form style, explode true, default value [75, 23]', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'example',
+    style: 'form',
+    explode: true,
+    value: [75, 23],
+    expectedString: /id: \['75', '23']/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, simple style, no explode (ignored), default value [75,23]', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'example',
+    style: 'simple',
+    explode: undefined,
+    value: [75, 23],
+    expectedString: /id: '75,23'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, simple style, explode true (ignored), default value [75,23]', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'example',
+    style: 'simple',
+    explode: true,
+    value: [75, 23],
+    expectedString: /id: '75,23'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+// Array Query Parameter Tests - Value in Examples
+
+test('Parameter in query, no style (defaults form), no explode (defaults true), default value [75, 23]', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'examples',
+    style: undefined,
+    explode: undefined,
+    value: [75, 23],
+    expectedString: /id: \['75', '23']/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, form style, no explode (defaults true), default value [75, 23]', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'examples',
+    style: 'form',
+    explode: undefined,
+    value: [75, 23],
+    expectedString: /id: \['75', '23']/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, form style, explode true, default value [75, 23]', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'examples',
+    style: 'form',
+    explode: true,
+    value: [75, 23],
+    expectedString: /id: \['75', '23']/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, simple style, no explode (ignored), default value [75,23]', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'examples',
+    style: 'simple',
+    explode: undefined,
+    value: [75, 23],
+    expectedString: /id: '75,23'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, simple style, explode true (ignored), default value [75,23]', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'examples',
+    style: 'simple',
+    explode: true,
+    value: [75, 23],
+    expectedString: /id: '75,23'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+// Object Query Parameter Tests
+
+test('Parameter in query, no style (defaults form), no explode (defaults true), default value {R:100,G:230,B:19}', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'default',
+    style: undefined,
+    explode: undefined,
+    value: { R: 100, G: 230, B: 19 },
+    expectedString: /R: '100', G: '230', B: '19'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, form style, no explode (defaults true), default value {R:100,G:230,B:19}', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'default',
+    style: 'form',
+    explode: undefined,
+    value: { R: 100, G: 230, B: 19 },
+    expectedString: /R: '100', G: '230', B: '19'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, form style, explode true, default value {R:100,G:230,B:19}', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'default',
+    style: 'form',
+    explode: true,
+    value: { R: 100, G: 230, B: 19 },
+    expectedString: /R: '100', G: '230', B: '19'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in query, simple style, no explode (ignored), default value {R:100,G:230,B:19}', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'query',
+    locationOfExample: 'default',
+    style: 'simple',
+    explode: undefined,
+    value: { R: 100, G: 230, B: 19 },
+    expectedString: /id: 'R,100,G,230,B,19'/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+// Primitive Path Parameter Tests
+
+test('Parameter in path, no style (defaults simple), no explode (ignored), example value 255', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets/{id}',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'path',
+    locationOfExample: 'example',
+    style: undefined,
+    explode: undefined,
+    value: 255,
+    expectedString: /\/pets\/255/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+test('Parameter in path, no style (defaults simple), no explode (ignored), examples value 255', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets/{id}',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'path',
+    locationOfExample: 'examples',
+    style: undefined,
+    explode: undefined,
+    value: 255,
+    expectedString: /\/pets\/255/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+// Array Path Parameter Tests
+
+test('Parameter in path, no style (defaults simple), explode true, example value [255, 715]', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets/{id}',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'path',
+    locationOfExample: 'example',
+    style: undefined,
+    explode: true,
+    value: [255, 715],
+    expectedString: /\/pets\/255,715/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
+
+// test('Parameter in query, no style, no explode, default value 75', function (t) {
+//   t.plan(7);
+
+//   // Test all the variations of query parameters
+//   // value: array, object, primitive
+//   // parameter key: default, example, examples (and $ref versions)
+//   // style: form, simple, _missing_
+//   // explode: true, false, _missing_
+
+//   testScenario = Object.assign({}, baseScenario, {
+//     value: 'dog',
+//     expectedString: /id=dog/,
+//   });
+//   runParameterTest(t, testScenario);
+
+//   // Default style of query is form, default of explode is true for form
+//   testScenario = Object.assign({}, baseScenario, {
+//     value: [75, 23],
+//     expectedString: /id=75&id=23/,
+//   });
+//   runParameterTest(t, testScenario);
+
+//   testScenario = Object.assign({}, baseScenario, {
+//     value: [75, 14],
+//     expectedString: /id=75%2C14/,
+//     explode: false,
+//   });
+//   runParameterTest(t, testScenario);
+
+//   testScenario = Object.assign({}, baseScenario, {
+//     value: [175, 223],
+//     style: 'simple',
+//     expectedString: /id=175%2C223/,
+//   });
+//   runParameterTest(t, testScenario);
+
+//   testScenario = Object.assign({}, baseScenario, {
+//     value: { R: 100, B: 230, C: 19 },
+//     style: 'simple',
+//     expectedString: /id=R%2C100%2CB%2C230%2CC%2C19/,
+//   });
+//   runParameterTest(t, testScenario);
+
+//   testScenario = Object.assign({}, baseScenario, {
+//     value: { R: 100, B: 230, C: 19 },
+//     style: 'form',
+//     expectedString: /R=100&B=230&C=19/,
+//   });
+//   runParameterTest(t, testScenario);
+
+//   t.end();
+// });
+
+// test('Query Parameters', function (t) {
+//   t.plan(1);
+
+//   // Test all the variations of
+//   // value: array, object, primitive
+//   // parameter key: example, examples (and $ref versions)
+//   // style: form, simple
+//   // in: path, query, header
+//   // exploded: true, false
+
+//   // make a clone so other tests are not impacted
+//   const api = JSON.parse(JSON.stringify(ParameterExampleReferenceAPI));
+
+//   api.paths['/pets'].get.parameters[0].explode = true;
+
+//   const result = OpenAPISnippets.getEndpointSnippets(api, '/pets', 'get', [
+//     'shell_curl',
+//   ]);
+//   const snippet = result.snippets[0].content;
+//   t.true(/tags=dog&tags=cat/.test(snippet));
+//   t.end();
+// });
+
+// test('Header Parameters', function (t) {
+//   t.plan(1);
+
+//   // Test all the variations of
+//   // value: array, object, primitive
+//   // parameter key: example, examples (and $ref versions)
+//   // style: form, simple
+//   // in: path, query, header
+//   // exploded: true, false
+
+//   // make a clone so other tests are not impacted
+//   const api = JSON.parse(JSON.stringify(ParameterExampleReferenceAPI));
+
+//   api.paths['/pets'].get.parameters[0].explode = true;
+
+//   const result = OpenAPISnippets.getEndpointSnippets(api, '/pets', 'get', [
+//     'shell_curl',
+//   ]);
+//   const snippet = result.snippets[0].content;
+//   t.true(/tags=dog&tags=cat/.test(snippet));
+//   t.end();
+// });
