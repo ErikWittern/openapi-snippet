@@ -32,7 +32,11 @@
             "description": "tags to filter by",
             "required": false,
             "style": "form",
-            "example": ["dog", "cat"],
+            "explode": false,
+            "example": [
+              "dog",
+              "cat"
+            ],
             "schema": {
               "type": "array",
               "items": {
@@ -84,7 +88,11 @@
           "description": "tags to filter by",
           "required": false,
           "style": "form",
-          "example": ["dog", "cat"],
+          "explode": false,
+          "example": [
+            "dog",
+            "cat"
+          ],
           "schema": {
             "type": "array",
             "items": {
@@ -153,7 +161,11 @@
             "in": "query",
             "description": "A comma-seperated list of species IDs",
             "required": false,
-            "example": [1, 2],
+            "explode": false,
+            "example": [
+              1,
+              2
+            ],
             "schema": {
               "type": "array",
               "items": {
@@ -195,7 +207,9 @@
             "$ref": "#/components/schemas/NewPet"
           },
           {
-            "required": ["id"],
+            "required": [
+              "id"
+            ],
             "properties": {
               "id": {
                 "type": "integer",
@@ -206,7 +220,9 @@
         ]
       },
       "NewPet": {
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "properties": {
           "name": {
             "type": "string"
@@ -223,7 +239,9 @@
         "type": "array"
       },
       "Thing": {
-        "required": ["id"],
+        "required": [
+          "id"
+        ],
         "properties": {
           "id": {
             "type": "integer"
@@ -231,7 +249,10 @@
         }
       },
       "Error": {
-        "required": ["code", "message"],
+        "required": [
+          "code",
+          "message"
+        ],
         "properties": {
           "code": {
             "type": "integer",
