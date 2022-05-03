@@ -20,13 +20,26 @@
  */
 const OpenAPISampler = require('openapi-sampler');
 
+const explodeArrayParameter = function (name, example) {
+  return example.map((entry) => {
+    return { name, value: entry + '' };
+  });
+};
+
+const explodeObjectParameter = function (example) {
+  return Object.keys(example).map((name) => {
+    return { name, value: example[name] + '' };
+  });
+};
+
 /**
  * If example has an array value, then returns the first value in that array as the example;
  * else this just returns example.
  * @param {*} example
  * @returns
  */
-const getParameterValueFromExample = function (
+const getQueryStringObjectsFromExample = function (
+  name,
   example,
   location,
   style,
@@ -34,7 +47,7 @@ const getParameterValueFromExample = function (
 ) {
   if (!location) return;
 
-  if (!style) {
+  if (typeof style === 'undefined') {
     // From OpenAPI spec
     // https://spec.openapis.org/oas/v3.0.3#fixed-fields-9
     if (location === 'query' || location === 'cookie') {
@@ -54,23 +67,49 @@ const getParameterValueFromExample = function (
 
   if (Array.isArray(example)) {
     if (style === 'simple' || (style === 'form' && !explode)) {
-      return example + '';
+      return {
+        name,
+        value: example + '',
+      };
     }
     if (style === 'form' && explode) {
-      // Not yet a string. Caller will need to process.
-      return { explode: example };
+      return explodeArrayParameter(name, example);
     }
   }
 
   if (example && typeof example === 'object') {
     if (style === 'form' || style === 'simple') {
       return explode
-        ? { explode: example } // Not yet a string, caller will need to process
-        : Object.keys(example).map((key) => `${key},${example[key]}`) + '';
+        ? explodeObjectParameter(example)
+        : {
+            name,
+            value:
+              Object.keys(example).map((key) => `${key},${example[key]}`) + '',
+          };
     }
   }
 
-  return example + '';
+  return { name, value: example + '' };
+};
+
+const getParameterValueFromExampleForPath = function (
+  name,
+  example,
+  location,
+  style,
+  explode
+) {
+  const queryStringObjects = getQueryStringObjectsFromExample(
+    name,
+    example,
+    location,
+    style,
+    explode
+  );
+  if (Array.isArray(queryStringObjects)) {
+    return queryStringObjects.map((entry) => entry.value) + '';
+  }
+  return queryStringObjects.value + '';
 };
 
 /**
@@ -83,7 +122,8 @@ const getParameterValueFromExample = function (
  * @param {string} defaultValue  The default value to use for the parameter if no suitable value found
  * @return {string}              A suitable value from examples object, else defaultValue
  */
-const getParameterValueFromExamples = function (
+const getQueryStringObjectsFromExamples = function (
+  name,
   examples,
   style,
   explode,
@@ -95,7 +135,8 @@ const getParameterValueFromExamples = function (
     if (values.length > 0 && typeof values[0].value !== 'undefined') {
       const potentialValue = values[0].value;
 
-      return getParameterValueFromExample(
+      return getQueryStringObjectsFromExample(
+        name,
         potentialValue,
         style,
         explode,
@@ -104,6 +145,26 @@ const getParameterValueFromExamples = function (
     }
   }
   return defaultValue;
+};
+
+const getParameterValueFromExamplesForPath = function (
+  name,
+  example,
+  location,
+  style,
+  explode
+) {
+  const queryStringObjects = getQueryStringObjectsFromExamples(
+    name,
+    example,
+    location,
+    style,
+    explode
+  );
+  if (Array.isArray(queryStringObjects)) {
+    return queryStringObjects.map((entry) => entry.value) + '';
+  }
+  return queryStringObjects.value + '';
 };
 
 /**
@@ -306,13 +367,18 @@ const getBaseUrl = function (openApi, path, method) {
  * @return {Object}        Object describing the parameters in a given OpenAPI method or path
  */
 const getParameterValues = function (param, values) {
-  let value =
-    'SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE';
+  let value = {
+    name: param.name,
+    value: 'SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE',
+  };
   if (values && typeof values[param.name] !== 'undefined') {
-    value =
-      values[param.name] + ''; /* adding a empty string to convert to string */
+    value = {
+      name: param.name,
+      value: values[param.name] + '',
+    }; /* adding a empty string to convert to string */
   } else if (typeof param.default !== 'undefined') {
-    value = getParameterValueFromExample(
+    value = getQueryStringObjectsFromExample(
+      param.name,
       param.default,
       param.in,
       param.style,
@@ -322,21 +388,24 @@ const getParameterValues = function (param, values) {
     typeof param.schema !== 'undefined' &&
     typeof param.schema.example !== 'undefined'
   ) {
-    value = getParameterValueFromExample(
+    value = getQueryStringObjectsFromExample(
+      param.name,
       param.schema.example,
       param.in,
       param.style,
       param.explode
     );
   } else if (typeof param.example !== 'undefined') {
-    value = getParameterValueFromExample(
+    value = getQueryStringObjectsFromExample(
+      param.name,
       param.example,
       param.in,
       param.style,
       param.explode
     );
   } else if (typeof param.examples !== 'undefined') {
-    value = getParameterValueFromExamples(
+    value = getQueryStringObjectsFromExamples(
+      param.name,
       param.examples,
       param.in,
       param.style,
@@ -344,11 +413,8 @@ const getParameterValues = function (param, values) {
       value
     );
   }
-
-  return {
-    name: param.name,
-    value: value,
-  };
+  // TODO: Rename this and the getParameterValueFrom* methods, They now get "query strings"
+  return value;
 };
 
 /**
@@ -432,9 +498,23 @@ const getQueryStrings = function (openApi, path, method, values) {
   // https://swagger.io/specification/
   const queryStrings = Object.assign(pathQueryStrings, methodQueryStrings);
 
-  // Now we need to go thru all of the query values. If any is an object it's because
-  // it has a key named `explode` and a value which needs to be exploded.
+  // Now we need to go thru all of the query values. If any is an array it's because
+  // it's an exploded query string. We need to flatten these.
 
+  const inspect = Object.values(queryStrings).flatMap((entry) => {
+    if (Array.isArray(entry.value)) {
+      return entry.value.map((innerEntry) => {
+        return {
+          name: entry.name,
+          value: innerEntry.value,
+        };
+      });
+    } else {
+      return entry;
+    }
+  });
+
+  return inspect;
   const unexplodedQueryStrings = Object.values(queryStrings);
   const explodedQueryStrings = [];
   unexplodedQueryStrings.forEach((unexploded) => {
@@ -491,7 +571,8 @@ const getFullPath = function (openApi, path, method) {
           // only if the schema has an example value
           fullPath = fullPath.replace(
             '{' + param.name + '}',
-            getParameterValueFromExample(
+            getParameterValueFromExampleForPath(
+              param.name,
               param.example,
               param.in,
               param.style,
@@ -502,7 +583,8 @@ const getFullPath = function (openApi, path, method) {
           const defaultValue = '{' + param.name + '}';
           fullPath = fullPath.replace(
             defaultValue,
-            getParameterValueFromExamples(
+            getParameterValueFromExamplesForPath(
+              param.name,
               param.examples,
               param.in,
               param.style,
