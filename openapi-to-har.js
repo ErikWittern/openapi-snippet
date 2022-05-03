@@ -544,7 +544,10 @@ const getHeadersArray = function (openApi, path, method) {
   // headers defined in path object:
   if (typeof pathObj.parameters !== 'undefined') {
     for (let k in pathObj.parameters) {
-      const param = pathObj.parameters[k];
+      let param = pathObj.parameters[k];
+      if (typeof param['$ref'] === 'string' && /^#/.test(param['$ref'])) {
+        param = resolveRef(openApi, param['$ref']);
+      }
       if (
         typeof param.in !== 'undefined' &&
         param.in.toLowerCase() === 'header'
