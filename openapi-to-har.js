@@ -26,12 +26,47 @@ const OpenAPISampler = require('openapi-sampler');
  * @param {*} example
  * @returns
  */
-const getParameterValueFromExample = function (example) {
+const getParameterValueFromExample = function (
+  example,
+  location,
+  style,
+  explode
+) {
+  if (!location) return;
+
+  if (!style) {
+    // From OpenAPI spec
+    // https://spec.openapis.org/oas/v3.0.3#fixed-fields-9
+    if (location === 'query' || location === 'cookie') {
+      style = 'form';
+    } else if (location === 'path' || location === 'header') {
+      style = 'simple';
+    }
+  }
+
+  if (typeof explode === 'undefined') {
+    if (style === 'form') {
+      // From OpenAPI Spec
+      // When style is form, the default value is true. For all other styles, the default value is false.
+      explode = true;
+    }
+  }
+
   if (Array.isArray(example)) {
-    // just return the first entry since there are multiple ways to model
-    // an array as a query parameter.
-    if (example.length > 0) {
-      return example[0] + '';
+    if (style === 'simple' || (style === 'form' && !explode)) {
+      return example + '';
+    }
+    if (style === 'form' && explode) {
+      // Not yet a string. Caller will need to process.
+      return { explode: example };
+    }
+  }
+
+  if (example && typeof example === 'object') {
+    if (style === 'form' || style === 'simple') {
+      return explode
+        ? { explode: example } // Not yet a string, caller will need to process
+        : Object.keys(example).map((key) => `${key},${example[key]}`) + '';
     }
   }
 
@@ -48,14 +83,24 @@ const getParameterValueFromExample = function (example) {
  * @param {string} defaultValue  The default value to use for the parameter if no suitable value found
  * @return {string}              A suitable value from examples object, else defaultValue
  */
-const getParameterValueFromExamples = function (examples, defaultValue) {
+const getParameterValueFromExamples = function (
+  examples,
+  style,
+  explode,
+  defaultValue
+) {
   if (examples && typeof examples === 'object') {
     const values = Object.values(examples);
 
     if (values.length > 0 && typeof values[0].value !== 'undefined') {
       const potentialValue = values[0].value;
 
-      return getParameterValueFromExample(potentialValue, defaultValue);
+      return getParameterValueFromExample(
+        potentialValue,
+        style,
+        explode,
+        defaultValue
+      );
     }
   }
   return defaultValue;
@@ -267,17 +312,39 @@ const getParameterValues = function (param, values) {
     value =
       values[param.name] + ''; /* adding a empty string to convert to string */
   } else if (typeof param.default !== 'undefined') {
-    value = param.default + '';
+    value = getParameterValueFromExample(
+      param.default,
+      param.in,
+      param.style,
+      param.explode
+    );
   } else if (
     typeof param.schema !== 'undefined' &&
     typeof param.schema.example !== 'undefined'
   ) {
-    value = getParameterValueFromExample(param.schema.example);
+    value = getParameterValueFromExample(
+      param.schema.example,
+      param.in,
+      param.style,
+      param.explode
+    );
   } else if (typeof param.example !== 'undefined') {
-    value = getParameterValueFromExample(param.example);
+    value = getParameterValueFromExample(
+      param.example,
+      param.in,
+      param.style,
+      param.explode
+    );
   } else if (typeof param.examples !== 'undefined') {
-    value = getParameterValueFromExamples(param.examples, value);
+    value = getParameterValueFromExamples(
+      param.examples,
+      param.in,
+      param.style,
+      param.explode,
+      value
+    );
   }
+
   return {
     name: param.name,
     value: value,
@@ -364,7 +431,37 @@ const getQueryStrings = function (openApi, path, method, values) {
   // it but can never remove it.
   // https://swagger.io/specification/
   const queryStrings = Object.assign(pathQueryStrings, methodQueryStrings);
-  return Object.values(queryStrings);
+
+  // Now we need to go thru all of the query values. If any is an object it's because
+  // it has a key named `explode` and a value which needs to be exploded.
+
+  const unexplodedQueryStrings = Object.values(queryStrings);
+  const explodedQueryStrings = [];
+  unexplodedQueryStrings.forEach((unexploded) => {
+    if (typeof unexploded.value === 'object') {
+      const value = unexploded.value.explode;
+      if (Array.isArray(value)) {
+        value.forEach((entry) => {
+          explodedQueryStrings.push({
+            name: unexploded.name,
+            value: entry + '',
+          });
+        });
+      } else {
+        // this is an object
+        Object.keys(value).forEach((key) => {
+          explodedQueryStrings.push({
+            name: key,
+            value: value[key] + '',
+          });
+        });
+      }
+    } else {
+      explodedQueryStrings.push(unexploded);
+    }
+  });
+
+  return explodedQueryStrings;
 };
 
 /**
@@ -394,13 +491,24 @@ const getFullPath = function (openApi, path, method) {
           // only if the schema has an example value
           fullPath = fullPath.replace(
             '{' + param.name + '}',
-            getParameterValueFromExample(param.example)
+            getParameterValueFromExample(
+              param.example,
+              param.in,
+              param.style,
+              param.explode
+            )
           );
         } else if (typeof param.examples !== 'undefined') {
           const defaultValue = '{' + param.name + '}';
           fullPath = fullPath.replace(
             defaultValue,
-            getParameterValueFromExamples(param.examples, defaultValue)
+            getParameterValueFromExamples(
+              param.examples,
+              param.in,
+              param.style,
+              param.explode,
+              defaultValue
+            )
           );
         }
       }
