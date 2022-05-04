@@ -21,13 +21,33 @@
 const OpenAPISampler = require('openapi-sampler');
 
 /**
- * Creates a query string object as defined by HAR.
+ * An HAR query string object.
+ * @typedef {Object} QueryStringObject
+ * @property {string} name - The name of a parameter
+ * @property {string} value - The value of a parameter (converted to string).
+ */
+
+/**
+ * Creates one or more query string object (as defined by HAR) for the
+ * given parameter name and value. Returns the results in an array (even if
+ * only one object was created)
  *
- * The
+ * If explode is false, then the resulting array will always have one object.
+ * If explode is true, then the resulting array may have more than one object depending on value.
+ * The explode variable only applies to `object` and `array` values.
  *
+ * @param {string} name - The name of the parameter
+ * @param {*} value - The value of the parameter
+ * @param {string} location - One of the values of `in` from the OpenAPI spec for Parameter.
+ * Acceptable values are `query`, `path`, `header` and `cookie`
+ * @param {string?} style - One of the acceptable styles defined bby OpenAPI spec. Only `form` and `simple` are fully supported.
+ * If this is not specified then it defaults to `form` for `query` and `cookie` parameters and `simple` for path and header parameters.
+ * @param {boolean?} explode - When this is true, parameter values of type array or object generate separate parameters
+ * for each value of the array or key-value pair of the map. For other types of parameters this property has no effect. When style is form,
+ * the default value is true. For all other styles, the default value is false.
  *
- * @param {*} value
- * @returns
+ * @returns {QueryStringObject[]} - An array of query string objects for the parameter.
+ * There will only be more than one in the list if explode is true and value is an object or array.
  */
 const createQueryStringObjects = function (
   name,
@@ -81,18 +101,22 @@ const createQueryStringObjects = function (
     (style === 'simple' && location === 'query')
   ) {
     // this is an error according to the spec
-    return {
-      name,
-      value: 'errorInSpec',
-    };
+    return [
+      {
+        name,
+        value: 'errorInSpec',
+      },
+    ];
   }
 
   if (Array.isArray(value)) {
     if (style === 'simple' || (style === 'form' && !explode)) {
-      return {
-        name,
-        value: value + '',
-      };
+      return [
+        {
+          name,
+          value: value + '',
+        },
+      ];
     }
     if (style === 'form' && explode) {
       return explodeArrayParameter(name, value);
@@ -103,14 +127,17 @@ const createQueryStringObjects = function (
     if (style === 'form' || style === 'simple') {
       return explode
         ? explodeObjectParameter(value)
-        : {
-            name,
-            value: Object.keys(value).map((key) => `${key},${value[key]}`) + '',
-          };
+        : [
+            {
+              name,
+              value:
+                Object.keys(value).map((key) => `${key},${value[key]}`) + '',
+            },
+          ];
     }
   }
 
-  return { name, value: value + '' };
+  return [{ name, value: value + '' }];
 };
 
 const getParameterValueFromExampleForPath = function (
@@ -128,7 +155,7 @@ const getParameterValueFromExampleForPath = function (
     explode
   );
 
-  if (Array.isArray(queryStringObjects)) {
+  if (queryStringObjects.length > 1) {
     // We are dealing with an exploded parameter, check the example
     // to see if it's an array or an object as they explode differently
     if (Array.isArray(example)) {
@@ -137,7 +164,8 @@ const getParameterValueFromExampleForPath = function (
       return queryStringObjects.map((qs) => `${qs.name}=${qs.value}`) + '';
     }
   }
-  return queryStringObjects.value + '';
+  // Not exploding so just get the single parameter out of the array
+  return queryStringObjects[0].value + '';
 };
 
 /**
@@ -334,23 +362,23 @@ const getBaseUrl = function (openApi, path, method) {
 };
 
 /**
- * Gets an object describing the parameters (header or query) in a given OpenAPI method
- * @param  {Object} param  parameter values to use in snippet
- * @param  {Object} values Optional: query parameter values to use in the snippet if present
- * @return {Object}        Object describing the parameters in a given OpenAPI method or path
+ * Gets an array of query string objects (per HAR) describing the parameters (header or query) in a given OpenAPI method
+ * @param  {Object} param         parameter values to use in snippet
+ * @param  {Object} values        Optional: query parameter values to use in the snippet if present
+ * @return {QueryStringObject[]}  Query string objects describing the parameters in a given OpenAPI method or path
  */
-const getParameterValues = function (param, values) {
-  let value = {
+const getQueryStringObjects = function (param, values) {
+  let queryStringObjects = {
     name: param.name,
     value: 'SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE',
   };
   if (values && typeof values[param.name] !== 'undefined') {
-    value = {
+    queryStringObjects = {
       name: param.name,
       value: values[param.name] + '',
     }; /* adding a empty string to convert to string */
   } else if (typeof param.default !== 'undefined') {
-    value = createQueryStringObjects(
+    queryStringObjects = createQueryStringObjects(
       param.name,
       param.default,
       param.in,
@@ -361,7 +389,7 @@ const getParameterValues = function (param, values) {
     typeof param.schema !== 'undefined' &&
     typeof param.schema.example !== 'undefined'
   ) {
-    value = createQueryStringObjects(
+    queryStringObjects = createQueryStringObjects(
       param.name,
       param.schema.example,
       param.in,
@@ -369,7 +397,7 @@ const getParameterValues = function (param, values) {
       param.explode
     );
   } else if (typeof param.example !== 'undefined') {
-    value = createQueryStringObjects(
+    queryStringObjects = createQueryStringObjects(
       param.name,
       param.example,
       param.in,
@@ -382,19 +410,18 @@ const getParameterValues = function (param, values) {
 
       if (values.length > 0 && typeof values[0].value !== 'undefined') {
         const example = values[0].value;
-        value = createQueryStringObjects(
+        queryStringObjects = createQueryStringObjects(
           param.name,
           example,
           param.in,
           param.style,
           param.explode,
-          value
+          queryStringObjects
         );
       }
     }
   }
-  // TODO: Rename this and the getParameterValueFrom* methods, They now get "query strings"
-  return value;
+  return queryStringObjects;
 };
 
 /**
@@ -428,7 +455,7 @@ const parseParametersToQuery = function (openApi, parameters, values) {
     if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query') {
       // param.name is a safe key, because the spec defines
       // that name MUST be unique
-      queryStrings[param.name] = getParameterValues(param, values);
+      queryStrings[param.name] = getQueryStringObjects(param, values);
     }
   }
 
@@ -592,7 +619,7 @@ const getHeadersArray = function (openApi, path, method) {
         typeof param.in !== 'undefined' &&
         param.in.toLowerCase() === 'header'
       ) {
-        headers.push(getParameterValues(param));
+        headers.push(getQueryStringObjects(param));
       }
     }
   }
