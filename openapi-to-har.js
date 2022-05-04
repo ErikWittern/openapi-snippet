@@ -140,17 +140,25 @@ const createQueryStringObjects = function (
   return [{ name, value: value + '' }];
 };
 
+/**
+ * Returns `value` formatted properly for a path parameter with given values of
+ * `style` and `explode`
+ * @param {string} name
+ * @param {*} value
+ * @param {string} style
+ * @param {boolean} explode
+ * @returns {string} Returns `value` formatted properly for the specified path parameter
+ */
 const getParameterValueFromExampleForPath = function (
   name,
-  example,
-  location,
+  value,
   style,
   explode
 ) {
   const queryStringObjects = createQueryStringObjects(
     name,
-    example,
-    location,
+    value,
+    'path',
     style,
     explode
   );
@@ -158,7 +166,7 @@ const getParameterValueFromExampleForPath = function (
   if (queryStringObjects.length > 1) {
     // We are dealing with an exploded parameter, check the example
     // to see if it's an array or an object as they explode differently
-    if (Array.isArray(example)) {
+    if (Array.isArray(value)) {
       return queryStringObjects.map((entry) => entry.value) + '';
     } else {
       return queryStringObjects.map((qs) => `${qs.name}=${qs.value}`) + '';
@@ -552,7 +560,6 @@ const getFullPath = function (openApi, path, method) {
             getParameterValueFromExampleForPath(
               param.name,
               param.example,
-              param.in,
               param.style,
               param.explode
             )
@@ -569,7 +576,6 @@ const getFullPath = function (openApi, path, method) {
                 getParameterValueFromExampleForPath(
                   param.name,
                   example,
-                  param.in,
                   param.style,
                   param.explode,
                   defaultValue
