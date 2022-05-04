@@ -20,25 +20,14 @@
  */
 const OpenAPISampler = require('openapi-sampler');
 
-const explodeArrayParameter = function (name, example) {
-  return example.map((entry) => {
-    return { name, value: entry + '' };
-  });
-};
-
-const explodeObjectParameter = function (example) {
-  return Object.keys(example).map((name) => {
-    return { name, value: example[name] + '' };
-  });
-};
-
 /**
- * If example has an array value, then returns the first value in that array as the example;
- * else this just returns example.
+ * Creates a query string object as defined by HAR.
+ *
+ * 
  * @param {*} example
  * @returns
  */
-const getQueryStringObjectsFromExample = function (
+const createQueryStringObject = function (
   name,
   example,
   location,
@@ -46,6 +35,18 @@ const getQueryStringObjectsFromExample = function (
   explode
 ) {
   if (!location) return;
+
+  const explodeArrayParameter = function (name, example) {
+    return example.map((entry) => {
+      return { name, value: entry + '' };
+    });
+  };
+
+  const explodeObjectParameter = function (example) {
+    return Object.keys(example).map((name) => {
+      return { name, value: example[name] + '' };
+    });
+  };
 
   if (typeof style === 'undefined') {
     // From OpenAPI spec
@@ -63,6 +64,17 @@ const getQueryStringObjectsFromExample = function (
       // When style is form, the default value is true. For all other styles, the default value is false.
       explode = true;
     }
+  }
+
+  if (
+    (style === 'form' && location === 'path') ||
+    (style === 'simple' && location === 'query')
+  ) {
+    // this is an error according to the spec
+    return {
+      name,
+      value: 'errorInSpec',
+    };
   }
 
   if (Array.isArray(example)) {
@@ -99,70 +111,22 @@ const getParameterValueFromExampleForPath = function (
   style,
   explode
 ) {
-  const queryStringObjects = getQueryStringObjectsFromExample(
+  const queryStringObjects = createQueryStringObject(
     name,
     example,
     location,
     style,
     explode
   );
+
   if (Array.isArray(queryStringObjects)) {
-    return queryStringObjects.map((entry) => entry.value) + '';
-  }
-  return queryStringObjects.value + '';
-};
-
-/**
- * Looks at the first entry in examples and if it has a value of type string, it returns that.
- *
- * If the object is empty, or the first entry has a value whose type is not a string, then the
- * defaultValue is returned.
- *
- * @param {Object} examples      An OpenAPI Examples object
- * @param {string} defaultValue  The default value to use for the parameter if no suitable value found
- * @return {string}              A suitable value from examples object, else defaultValue
- */
-const getQueryStringObjectsFromExamples = function (
-  name,
-  examples,
-  style,
-  explode,
-  defaultValue
-) {
-  if (examples && typeof examples === 'object') {
-    const values = Object.values(examples);
-
-    if (values.length > 0 && typeof values[0].value !== 'undefined') {
-      const potentialValue = values[0].value;
-
-      return getQueryStringObjectsFromExample(
-        name,
-        potentialValue,
-        style,
-        explode,
-        defaultValue
-      );
+    // We are dealing with an exploded parameter, check the example
+    // to see if it's an array or an object as they explode differently
+    if (Array.isArray(example)) {
+      return queryStringObjects.map((entry) => entry.value) + '';
+    } else {
+      return queryStringObjects.map((qs) => `${qs.name}=${qs.value}`) + '';
     }
-  }
-  return defaultValue;
-};
-
-const getParameterValueFromExamplesForPath = function (
-  name,
-  example,
-  location,
-  style,
-  explode
-) {
-  const queryStringObjects = getQueryStringObjectsFromExamples(
-    name,
-    example,
-    location,
-    style,
-    explode
-  );
-  if (Array.isArray(queryStringObjects)) {
-    return queryStringObjects.map((entry) => entry.value) + '';
   }
   return queryStringObjects.value + '';
 };
@@ -377,7 +341,7 @@ const getParameterValues = function (param, values) {
       value: values[param.name] + '',
     }; /* adding a empty string to convert to string */
   } else if (typeof param.default !== 'undefined') {
-    value = getQueryStringObjectsFromExample(
+    value = createQueryStringObject(
       param.name,
       param.default,
       param.in,
@@ -388,7 +352,7 @@ const getParameterValues = function (param, values) {
     typeof param.schema !== 'undefined' &&
     typeof param.schema.example !== 'undefined'
   ) {
-    value = getQueryStringObjectsFromExample(
+    value = createQueryStringObject(
       param.name,
       param.schema.example,
       param.in,
@@ -396,7 +360,7 @@ const getParameterValues = function (param, values) {
       param.explode
     );
   } else if (typeof param.example !== 'undefined') {
-    value = getQueryStringObjectsFromExample(
+    value = createQueryStringObject(
       param.name,
       param.example,
       param.in,
@@ -404,14 +368,21 @@ const getParameterValues = function (param, values) {
       param.explode
     );
   } else if (typeof param.examples !== 'undefined') {
-    value = getQueryStringObjectsFromExamples(
-      param.name,
-      param.examples,
-      param.in,
-      param.style,
-      param.explode,
-      value
-    );
+    if (param.examples && typeof param.examples === 'object') {
+      const values = Object.values(param.examples);
+
+      if (values.length > 0 && typeof values[0].value !== 'undefined') {
+        const example = values[0].value;
+        value = createQueryStringObject(
+          param.name,
+          example,
+          param.in,
+          param.style,
+          param.explode,
+          value
+        );
+      }
+    }
   }
   // TODO: Rename this and the getParameterValueFrom* methods, They now get "query strings"
   return value;
@@ -501,7 +472,7 @@ const getQueryStrings = function (openApi, path, method, values) {
   // Now we need to go thru all of the query values. If any is an array it's because
   // it's an exploded query string. We need to flatten these.
 
-  const inspect = Object.values(queryStrings).flatMap((entry) => {
+  return Object.values(queryStrings).flatMap((entry) => {
     if (Array.isArray(entry.value)) {
       return entry.value.map((innerEntry) => {
         return {
@@ -513,35 +484,6 @@ const getQueryStrings = function (openApi, path, method, values) {
       return entry;
     }
   });
-
-  return inspect;
-  const unexplodedQueryStrings = Object.values(queryStrings);
-  const explodedQueryStrings = [];
-  unexplodedQueryStrings.forEach((unexploded) => {
-    if (typeof unexploded.value === 'object') {
-      const value = unexploded.value.explode;
-      if (Array.isArray(value)) {
-        value.forEach((entry) => {
-          explodedQueryStrings.push({
-            name: unexploded.name,
-            value: entry + '',
-          });
-        });
-      } else {
-        // this is an object
-        Object.keys(value).forEach((key) => {
-          explodedQueryStrings.push({
-            name: key,
-            value: value[key] + '',
-          });
-        });
-      }
-    } else {
-      explodedQueryStrings.push(unexploded);
-    }
-  });
-
-  return explodedQueryStrings;
 };
 
 /**
@@ -580,18 +522,25 @@ const getFullPath = function (openApi, path, method) {
             )
           );
         } else if (typeof param.examples !== 'undefined') {
-          const defaultValue = '{' + param.name + '}';
-          fullPath = fullPath.replace(
-            defaultValue,
-            getParameterValueFromExamplesForPath(
-              param.name,
-              param.examples,
-              param.in,
-              param.style,
-              param.explode,
-              defaultValue
-            )
-          );
+          if (param.examples && typeof param.examples === 'object') {
+            const values = Object.values(param.examples);
+
+            if (values.length > 0 && typeof values[0].value !== 'undefined') {
+              const example = values[0].value;
+              const defaultValue = '{' + param.name + '}';
+              fullPath = fullPath.replace(
+                defaultValue,
+                getParameterValueFromExampleForPath(
+                  param.name,
+                  example,
+                  param.in,
+                  param.style,
+                  param.explode,
+                  defaultValue
+                )
+              );
+            }
+          }
         }
       }
     }

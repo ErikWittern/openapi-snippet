@@ -450,23 +450,6 @@ test('Parameter in query, form style, no explode, default value 75', function (t
   t.end();
 });
 
-test('Parameter in query, simple style, no explode, default value 75', function (t) {
-  let testScenario = {
-    api: ParameterVariationsAPI,
-    path: '/pets',
-    method: 'get',
-    parameterName: 'id',
-    locationOfParameter: 'query',
-    locationOfExample: 'default',
-    style: 'simple',
-    explode: undefined,
-    value: 75,
-    expectedString: /id: '75'/,
-  };
-  runParameterTest(t, testScenario);
-  t.end();
-});
-
 test('Parameter in query, no style, no explode, example value 75', function (t) {
   let testScenario = {
     api: ParameterVariationsAPI,
@@ -501,23 +484,6 @@ test('Parameter in query, form style, no explode, example value 75', function (t
   t.end();
 });
 
-test('Parameter in query, simple style, no explode, example value 75', function (t) {
-  let testScenario = {
-    api: ParameterVariationsAPI,
-    path: '/pets',
-    method: 'get',
-    parameterName: 'id',
-    locationOfParameter: 'query',
-    locationOfExample: 'example',
-    style: 'simple',
-    explode: undefined,
-    value: 75,
-    expectedString: /id: '75'/,
-  };
-  runParameterTest(t, testScenario);
-  t.end();
-});
-
 test('Parameter in query, no style, no explode, examples value 75', function (t) {
   let testScenario = {
     api: ParameterVariationsAPI,
@@ -544,23 +510,6 @@ test('Parameter in query, form style, no explode, examples value 75', function (
     locationOfParameter: 'query',
     locationOfExample: 'examples',
     style: 'form',
-    explode: undefined,
-    value: 75,
-    expectedString: /id: '75'/,
-  };
-  runParameterTest(t, testScenario);
-  t.end();
-});
-
-test('Parameter in query, simple style, no explode, examples value 75', function (t) {
-  let testScenario = {
-    api: ParameterVariationsAPI,
-    path: '/pets',
-    method: 'get',
-    parameterName: 'id',
-    locationOfParameter: 'query',
-    locationOfExample: 'examples',
-    style: 'simple',
     explode: undefined,
     value: 75,
     expectedString: /id: '75'/,
@@ -639,40 +588,6 @@ test('Parameter in query, form style, explode true, default value [75, 23]', fun
   t.end();
 });
 
-test('Parameter in query, simple style, no explode (ignored), default value [75,23]', function (t) {
-  let testScenario = {
-    api: ParameterVariationsAPI,
-    path: '/pets',
-    method: 'get',
-    parameterName: 'id',
-    locationOfParameter: 'query',
-    locationOfExample: 'default',
-    style: 'simple',
-    explode: undefined,
-    value: [75, 23],
-    expectedString: /id: '75,23'/,
-  };
-  runParameterTest(t, testScenario);
-  t.end();
-});
-
-test('Parameter in query, simple style, explode true (ignored), default value [75,23]', function (t) {
-  let testScenario = {
-    api: ParameterVariationsAPI,
-    path: '/pets',
-    method: 'get',
-    parameterName: 'id',
-    locationOfParameter: 'query',
-    locationOfExample: 'default',
-    style: 'simple',
-    explode: true,
-    value: [75, 23],
-    expectedString: /id: '75,23'/,
-  };
-  runParameterTest(t, testScenario);
-  t.end();
-});
-
 // Array Query Parameter Tests - Example Value
 
 test('Parameter in query, no style (defaults form), no explode (defaults true), default value [75, 23]', function (t) {
@@ -721,40 +636,6 @@ test('Parameter in query, form style, explode true, default value [75, 23]', fun
     explode: true,
     value: [75, 23],
     expectedString: /id: \['75', '23']/,
-  };
-  runParameterTest(t, testScenario);
-  t.end();
-});
-
-test('Parameter in query, simple style, no explode (ignored), default value [75,23]', function (t) {
-  let testScenario = {
-    api: ParameterVariationsAPI,
-    path: '/pets',
-    method: 'get',
-    parameterName: 'id',
-    locationOfParameter: 'query',
-    locationOfExample: 'example',
-    style: 'simple',
-    explode: undefined,
-    value: [75, 23],
-    expectedString: /id: '75,23'/,
-  };
-  runParameterTest(t, testScenario);
-  t.end();
-});
-
-test('Parameter in query, simple style, explode true (ignored), default value [75,23]', function (t) {
-  let testScenario = {
-    api: ParameterVariationsAPI,
-    path: '/pets',
-    method: 'get',
-    parameterName: 'id',
-    locationOfParameter: 'query',
-    locationOfExample: 'example',
-    style: 'simple',
-    explode: true,
-    value: [75, 23],
-    expectedString: /id: '75,23'/,
   };
   runParameterTest(t, testScenario);
   t.end();
@@ -813,40 +694,6 @@ test('Parameter in query, form style, explode true, default value [75, 23]', fun
   t.end();
 });
 
-test('Parameter in query, simple style, no explode (ignored), default value [75,23]', function (t) {
-  let testScenario = {
-    api: ParameterVariationsAPI,
-    path: '/pets',
-    method: 'get',
-    parameterName: 'id',
-    locationOfParameter: 'query',
-    locationOfExample: 'examples',
-    style: 'simple',
-    explode: undefined,
-    value: [75, 23],
-    expectedString: /id: '75,23'/,
-  };
-  runParameterTest(t, testScenario);
-  t.end();
-});
-
-test('Parameter in query, simple style, explode true (ignored), default value [75,23]', function (t) {
-  let testScenario = {
-    api: ParameterVariationsAPI,
-    path: '/pets',
-    method: 'get',
-    parameterName: 'id',
-    locationOfParameter: 'query',
-    locationOfExample: 'examples',
-    style: 'simple',
-    explode: true,
-    value: [75, 23],
-    expectedString: /id: '75,23'/,
-  };
-  runParameterTest(t, testScenario);
-  t.end();
-});
-
 // Object Query Parameter Tests
 
 test('Parameter in query, no style (defaults form), no explode (defaults true), default value {R:100,G:230,B:19}', function (t) {
@@ -895,23 +742,6 @@ test('Parameter in query, form style, explode true, default value {R:100,G:230,B
     explode: true,
     value: { R: 100, G: 230, B: 19 },
     expectedString: /R: '100', G: '230', B: '19'/,
-  };
-  runParameterTest(t, testScenario);
-  t.end();
-});
-
-test('Parameter in query, simple style, no explode (ignored), default value {R:100,G:230,B:19}', function (t) {
-  let testScenario = {
-    api: ParameterVariationsAPI,
-    path: '/pets',
-    method: 'get',
-    parameterName: 'id',
-    locationOfParameter: 'query',
-    locationOfExample: 'default',
-    style: 'simple',
-    explode: undefined,
-    value: { R: 100, G: 230, B: 19 },
-    expectedString: /id: 'R,100,G,230,B,19'/,
   };
   runParameterTest(t, testScenario);
   t.end();
@@ -972,101 +802,38 @@ test('Parameter in path, no style (defaults simple), explode true, example value
   t.end();
 });
 
-// test('Parameter in query, no style, no explode, default value 75', function (t) {
-//   t.plan(7);
+// Object Path Parameter Tests
 
-//   // Test all the variations of query parameters
-//   // value: array, object, primitive
-//   // parameter key: default, example, examples (and $ref versions)
-//   // style: form, simple, _missing_
-//   // explode: true, false, _missing_
+test('Parameter in path, no style (defaults simple), explode true, example value {R: 150, G: 100, B: 225}', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets/{id}',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'path',
+    locationOfExample: 'example',
+    style: undefined,
+    explode: true,
+    value: { R: 150, G: 100, B: 225 },
+    expectedString: /\/pets\/R=150,G=100,B=225/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
 
-//   testScenario = Object.assign({}, baseScenario, {
-//     value: 'dog',
-//     expectedString: /id=dog/,
-//   });
-//   runParameterTest(t, testScenario);
-
-//   // Default style of query is form, default of explode is true for form
-//   testScenario = Object.assign({}, baseScenario, {
-//     value: [75, 23],
-//     expectedString: /id=75&id=23/,
-//   });
-//   runParameterTest(t, testScenario);
-
-//   testScenario = Object.assign({}, baseScenario, {
-//     value: [75, 14],
-//     expectedString: /id=75%2C14/,
-//     explode: false,
-//   });
-//   runParameterTest(t, testScenario);
-
-//   testScenario = Object.assign({}, baseScenario, {
-//     value: [175, 223],
-//     style: 'simple',
-//     expectedString: /id=175%2C223/,
-//   });
-//   runParameterTest(t, testScenario);
-
-//   testScenario = Object.assign({}, baseScenario, {
-//     value: { R: 100, B: 230, C: 19 },
-//     style: 'simple',
-//     expectedString: /id=R%2C100%2CB%2C230%2CC%2C19/,
-//   });
-//   runParameterTest(t, testScenario);
-
-//   testScenario = Object.assign({}, baseScenario, {
-//     value: { R: 100, B: 230, C: 19 },
-//     style: 'form',
-//     expectedString: /R=100&B=230&C=19/,
-//   });
-//   runParameterTest(t, testScenario);
-
-//   t.end();
-// });
-
-// test('Query Parameters', function (t) {
-//   t.plan(1);
-
-//   // Test all the variations of
-//   // value: array, object, primitive
-//   // parameter key: example, examples (and $ref versions)
-//   // style: form, simple
-//   // in: path, query, header
-//   // exploded: true, false
-
-//   // make a clone so other tests are not impacted
-//   const api = JSON.parse(JSON.stringify(ParameterExampleReferenceAPI));
-
-//   api.paths['/pets'].get.parameters[0].explode = true;
-
-//   const result = OpenAPISnippets.getEndpointSnippets(api, '/pets', 'get', [
-//     'shell_curl',
-//   ]);
-//   const snippet = result.snippets[0].content;
-//   t.true(/tags=dog&tags=cat/.test(snippet));
-//   t.end();
-// });
-
-// test('Header Parameters', function (t) {
-//   t.plan(1);
-
-//   // Test all the variations of
-//   // value: array, object, primitive
-//   // parameter key: example, examples (and $ref versions)
-//   // style: form, simple
-//   // in: path, query, header
-//   // exploded: true, false
-
-//   // make a clone so other tests are not impacted
-//   const api = JSON.parse(JSON.stringify(ParameterExampleReferenceAPI));
-
-//   api.paths['/pets'].get.parameters[0].explode = true;
-
-//   const result = OpenAPISnippets.getEndpointSnippets(api, '/pets', 'get', [
-//     'shell_curl',
-//   ]);
-//   const snippet = result.snippets[0].content;
-//   t.true(/tags=dog&tags=cat/.test(snippet));
-//   t.end();
-// });
+test('Parameter in path, no style (defaults simple), no explode (defaults false), example value {R: 150, G: 100, B: 225}', function (t) {
+  let testScenario = {
+    api: ParameterVariationsAPI,
+    path: '/pets/{id}',
+    method: 'get',
+    parameterName: 'id',
+    locationOfParameter: 'path',
+    locationOfExample: 'example',
+    style: undefined,
+    explode: undefined,
+    value: { R: 150, G: 100, B: 225 },
+    expectedString: /\/pets\/R,150,G,100,B,225/,
+  };
+  runParameterTest(t, testScenario);
+  t.end();
+});
