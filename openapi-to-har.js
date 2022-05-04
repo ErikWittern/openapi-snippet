@@ -23,18 +23,28 @@ const OpenAPISampler = require('openapi-sampler');
 /**
  * Creates a query string object as defined by HAR.
  *
- * 
- * @param {*} example
+ * The
+ *
+ *
+ * @param {*} value
  * @returns
  */
-const createQueryStringObject = function (
+const createQueryStringObjects = function (
   name,
-  example,
+  value,
   location,
   style,
   explode
 ) {
-  if (!location) return;
+  if (
+    typeof location === 'undefined' ||
+    typeof name === 'undefined' ||
+    typeof value === 'undefined'
+  )
+    return {
+      name,
+      value: 'errorInSpec',
+    };
 
   const explodeArrayParameter = function (name, example) {
     return example.map((entry) => {
@@ -77,31 +87,30 @@ const createQueryStringObject = function (
     };
   }
 
-  if (Array.isArray(example)) {
+  if (Array.isArray(value)) {
     if (style === 'simple' || (style === 'form' && !explode)) {
       return {
         name,
-        value: example + '',
+        value: value + '',
       };
     }
     if (style === 'form' && explode) {
-      return explodeArrayParameter(name, example);
+      return explodeArrayParameter(name, value);
     }
   }
 
-  if (example && typeof example === 'object') {
+  if (value && typeof value === 'object') {
     if (style === 'form' || style === 'simple') {
       return explode
-        ? explodeObjectParameter(example)
+        ? explodeObjectParameter(value)
         : {
             name,
-            value:
-              Object.keys(example).map((key) => `${key},${example[key]}`) + '',
+            value: Object.keys(value).map((key) => `${key},${value[key]}`) + '',
           };
     }
   }
 
-  return { name, value: example + '' };
+  return { name, value: value + '' };
 };
 
 const getParameterValueFromExampleForPath = function (
@@ -111,7 +120,7 @@ const getParameterValueFromExampleForPath = function (
   style,
   explode
 ) {
-  const queryStringObjects = createQueryStringObject(
+  const queryStringObjects = createQueryStringObjects(
     name,
     example,
     location,
@@ -341,7 +350,7 @@ const getParameterValues = function (param, values) {
       value: values[param.name] + '',
     }; /* adding a empty string to convert to string */
   } else if (typeof param.default !== 'undefined') {
-    value = createQueryStringObject(
+    value = createQueryStringObjects(
       param.name,
       param.default,
       param.in,
@@ -352,7 +361,7 @@ const getParameterValues = function (param, values) {
     typeof param.schema !== 'undefined' &&
     typeof param.schema.example !== 'undefined'
   ) {
-    value = createQueryStringObject(
+    value = createQueryStringObjects(
       param.name,
       param.schema.example,
       param.in,
@@ -360,7 +369,7 @@ const getParameterValues = function (param, values) {
       param.explode
     );
   } else if (typeof param.example !== 'undefined') {
-    value = createQueryStringObject(
+    value = createQueryStringObjects(
       param.name,
       param.example,
       param.in,
@@ -373,7 +382,7 @@ const getParameterValues = function (param, values) {
 
       if (values.length > 0 && typeof values[0].value !== 'undefined') {
         const example = values[0].value;
-        value = createQueryStringObject(
+        value = createQueryStringObjects(
           param.name,
           example,
           param.in,
