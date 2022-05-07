@@ -438,22 +438,19 @@ const getParameterValues = function (param, values) {
   let value =
     'SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE';
   if (values && typeof values[param.name] !== 'undefined') {
-    value =
-      values[param.name] + ''; /* adding a empty string to convert to string */
+    value = values[param.name];
   } else if (typeof param.default !== 'undefined') {
-    value = param.default + '';
+    value = param.default;
   } else if (
     typeof param.schema !== 'undefined' &&
     typeof param.schema.example !== 'undefined'
   ) {
-    value = param.schema.example + '';
+    value = param.schema.example;
   } else if (typeof param.example !== 'undefined') {
-    value = param.example + '';
+    value = param.example;
   }
-  return {
-    name: param.name,
-    value: value,
-  };
+
+  return createHarParameterObjects(param, value)[0];
 };
 
 /**
