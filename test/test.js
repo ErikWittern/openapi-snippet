@@ -3,6 +3,8 @@
 const test = require('tape');
 const OpenAPISnippets = require('../index');
 
+const { createHarParameterObjects } = require('../openapi-to-har');
+
 const InstagramOpenAPI = require('./instagram_swagger.json');
 const BloggerOpenAPI = require('./blogger_swagger.json');
 const GitHubOpenAPI = require('./github_swagger.json');
@@ -323,5 +325,730 @@ test('Testing the application/x-www-form-urlencoded example case', function (t) 
   const snippet = result.snippets[0].content;
   t.match(snippet, /.*--data 'id=id\+example\+value'.*/);
   t.match(snippet, /.*--data 'secret=secret\+example\+value'.*/);
+  t.end();
+});
+
+// Tests of createHarParameterObject
+
+// First a set of path parameter tests from here: https://swagger.io/docs/specification/serialization/#path
+
+test('Path: test that style and explode default correctly (to "simple" and "false") when neither is specified for path', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+  };
+
+  const expected = [{ name: 'id', value: '1,2,3' }];
+  const actual = createHarParameterObjects(parameter, [1, 2, 3]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+// Simple style tests:
+
+test('Path: /users/{id*} with id=5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'simple',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: '5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{id*} with id=[3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'simple',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: '3,4,5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{id*} with id= {"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'simple',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: 'role=admin,firstName=Alex,age=34' }];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{id} with id=5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'simple',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{id} with id=[3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'simple',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '3,4,5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{id} with id= {"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'simple',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: 'role,admin,firstName,Alex,age,34' }];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+// Label style tests
+
+test('Path: /users/{.id*} with id=5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'label',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: '.5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{.id*} with id=[3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'label',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: '.3.4.5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{.id*} with id= {"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'label',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: '.role=admin.firstName=Alex.age=34' }];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{.id} with id=5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'label',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '.5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{.id} with id=[3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'label',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '.3,4,5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{.id} with id= {"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'label',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '.role,admin,firstName,Alex,age,34' }];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+// Matrix style tests
+
+test('Path: /users/{;id*} with id=5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'matrix',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: ';id=5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{;id*} with id=[3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'matrix',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: ';id=3;id=4;id=5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{;id*} with id= {"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'matrix',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: ';role=admin;firstName=Alex;age=34' }];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{;id} with id=5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'matrix',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: ';id=5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{;id} with id=[3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'matrix',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: ';id=3,4,5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{;id} with id= {"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'matrix',
+    explode: false,
+  };
+
+  const expected = [
+    { name: 'id', value: ';id=role,admin,firstName,Alex,age,34' },
+  ];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+//// Query Parameters: Test cases from https://swagger.io/docs/specification/serialization/#query
+
+// Form Tests
+
+test('Query: /users{?id*} with id= 5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'form',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: '5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Query: /users{?id*} with id=[3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'form',
+    explode: true,
+  };
+
+  const expected = [
+    { name: 'id', value: '3' },
+    { name: 'id', value: '4' },
+    { name: 'id', value: '5' },
+  ];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Query: /users{?id*} with id={"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'form',
+    explode: true,
+  };
+
+  const expected = [
+    { name: 'role', value: 'admin' },
+    { name: 'firstName', value: 'Alex' },
+    { name: 'age', value: '34' },
+  ];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Query: /users{?id} with id= 5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'form',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Query: /users{?id} with id=[3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'form',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '3,4,5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Query: /users{?id} with id={"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'form',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: 'role,admin,firstName,Alex,age,34' }];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Query: test that style and explode default correctly (to "form" and "true") when neither is specified for query', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+  };
+
+  const expected = [
+    { name: 'firstName', value: 'Alex' },
+    { name: 'age', value: '34' },
+  ];
+  const actual = createHarParameterObjects(parameter, {
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+// Space Delimited Tests
+// Note: There are less scenarios for this and no special URI Template
+
+test('Query: /users{?id*} with id=[3,4,5], spaceDelimited', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'spaceDelimited',
+    explode: true,
+  };
+
+  const expected = [
+    { name: 'id', value: '3' },
+    { name: 'id', value: '4' },
+    { name: 'id', value: '5' },
+  ];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Query: /users{?id} with id=[3,4,5], spaceDelimited', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'spaceDelimited',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '3%204%205' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+// Pipe Delimited Tests
+// Note: There are less scenarios for this and no special URI Template
+
+test('Query: /users{?id*} with id=[3,4,5], pipeDelimited', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'pipeDelimited',
+    explode: true,
+  };
+
+  const expected = [
+    { name: 'id', value: '3' },
+    { name: 'id', value: '4' },
+    { name: 'id', value: '5' },
+  ];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Query: /users{?id} with id=[3,4,5], pipeDelimited', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'pipeDelimited',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '3|4|5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+// DeepObject
+// Spec doesn't say what to do if explode false. We just assume deepOject ignores explode
+// as no alternative serialization is defined when explode is false.
+
+test('Query: deepObject with id={"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'deepObject',
+  };
+
+  const expected = [
+    {
+      name: 'id[role]',
+      value: 'admin',
+    },
+    {
+      name: 'id[firstName]',
+      value: 'Alex',
+    },
+    {
+      name: 'id[age]',
+      value: '34',
+    },
+  ];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+//// Header Parameters https://swagger.io/docs/specification/serialization/#header
+
+test('Header: {id} with X-MyHeader = 5', function (t) {
+  const parameter = {
+    name: 'X-MyHeader',
+    in: 'header',
+    style: 'simple',
+    explode: false,
+  };
+
+  const expected = [{ name: 'X-MyHeader', value: '5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Header: {id} with X-MyHeader = [3,4,5]', function (t) {
+  const parameter = {
+    name: 'X-MyHeader',
+    in: 'header',
+    style: 'simple',
+    explode: false,
+  };
+
+  const expected = [{ name: 'X-MyHeader', value: '3,4,5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Header: {id} with X-MyHeader = {"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'X-MyHeader',
+    in: 'header',
+    style: 'simple',
+    explode: false,
+  };
+
+  const expected = [
+    { name: 'X-MyHeader', value: 'role,admin,firstName,Alex,age,34' },
+  ];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Header: {id*} with X-MyHeader = 5', function (t) {
+  const parameter = {
+    name: 'X-MyHeader',
+    in: 'header',
+    style: 'simple',
+    explode: true,
+  };
+
+  const expected = [{ name: 'X-MyHeader', value: '5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Header: {id*} with X-MyHeader = [3,4,5]', function (t) {
+  const parameter = {
+    name: 'X-MyHeader',
+    in: 'header',
+    style: 'simple',
+    explode: true,
+  };
+
+  const expected = [{ name: 'X-MyHeader', value: '3,4,5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Header: {id*} with X-MyHeader = {"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'X-MyHeader',
+    in: 'header',
+    style: 'simple',
+    explode: true,
+  };
+
+  const expected = [
+    { name: 'X-MyHeader', value: 'role=admin,firstName=Alex,age=34' },
+  ];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Header: Test that style and explode default to simple/false when not provided', function (t) {
+  const parameter = {
+    name: 'X-MyHeader',
+    in: 'header',
+  };
+
+  const expected = [
+    { name: 'X-MyHeader', value: 'role,admin,firstName,Alex,age,34' },
+  ];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+//// Cookie Parameters https://swagger.io/docs/specification/serialization/#cookie
+
+test("Cookie: Test that it doesn't throw an error if style and explode are missing", function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'cookie',
+  };
+
+  let expected = [{ name: 'id', value: '5' }];
+  let actual = createHarParameterObjects(parameter, 5);
+
+  t.deepEqual(actual, expected);
+
+  // At the time of writing the spec doesn't actually show any test cases for exploded arrays or objects
+  // so I assume they are not "legal"
+
+  t.end();
+});
+
+test('Cookie: id = 5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'cookie',
+    style: 'form',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: '5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Cookie: id={id} with id = 5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'cookie',
+    style: 'form',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Cookie: id={id} with id = [3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'cookie',
+    style: 'form',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '3,4,5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Cookie: id={id} with id = {role: "admin", firstName: "Alex", age: 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'cookie',
+    style: 'form',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: 'role,admin,firstName,Alex,age,34' }];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+
+  t.deepEqual(actual, expected);
   t.end();
 });

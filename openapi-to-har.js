@@ -75,6 +75,221 @@ const createHar = function (openApi, path, method, queryParamValues) {
 };
 
 /**
+ * Tests `value` to see if it is a primitive.
+ * @param {*} value - The value to test
+ * @returns {boolean} - `true` if `value` is a primitive, `false` otherwise
+ */
+const isPrimitive = function (value) {
+  if (value === null) return true;
+  const valueType = typeof value;
+  if (valueType === 'function' || valueType === 'object') return false;
+  return true;
+};
+
+/**
+ * Returns a string that is used as a prefix before a value in a path parameter
+ * @param {string} style
+ * @returns {string} - Returns `.` for label style and `;` for matrix style. Returns '' for any other input.
+ */
+const getPrefix = function (style) {
+  if (style === 'label') {
+    return '.';
+  }
+  if (style === 'matrix') {
+    return `;`;
+  }
+  return '';
+};
+
+/**
+ * Returns the separator character used between elements of a path parameter
+ * Returns '.' for label style, ';' for matrix style and ',' for all others
+ * @param {string} style
+ * @returns
+ */
+const getSeparator = function (style) {
+  if (style === 'label') return '.';
+  if (style === 'matrix') return ';';
+  return ',';
+};
+
+/**
+ * Returns a "parameter identifier" used in matrix style path parameters. For all other styles
+ * it returns ''
+ * @param {string} style
+ * @param {string} name - The parameter name
+ * @returns {string} - The empty string if `style` is not `matrix`, else a string in the format `;{name}=`
+ */
+const getParamId = function (style, name) {
+  if (style === 'matrix') return `${name}=`;
+  return '';
+};
+
+/**
+ * Returns the default style for the location per OpenAPI 3.0.3 spec
+ * @param {*} location
+ * @returns
+ */
+const getDefaultStyleForLocation = function (location) {
+  if (location === 'path' || location === 'header') {
+    return 'simple';
+  } else if (location === 'query' || location === 'cookie') {
+    return 'form';
+  }
+};
+
+/**
+ * Returns the default value of explode for the given style per OpenAPI 3.0.3 spec
+ * @param {*} style
+ * @returns
+ */
+const getDefaultExplodeForStyle = function (style) {
+  return style === 'form';
+};
+
+/**
+ * Returns the correct array element separator for unexploded query parameters
+ * based on style. If style is spaceDelimited this returns `%20` (the encoded string for
+ * space character). If style is pipeDelimited this returns '|'; else it returns ','
+ * @param {*} style
+ * @returns
+ */
+const getArrayElementSeparator = function (style) {
+  let separator = ',';
+  if (style === 'spaceDelimited') {
+    separator = '%20';
+  } else if (style === 'pipeDelimited') {
+    separator = '|';
+  }
+  return separator;
+};
+
+/**
+ * Returns a string representation of `obj`. Each key value pair is separated by
+ * a `keyValueSeparator` and each pair is separated by a `pairSeparator`.
+ *
+ * @param {*} obj
+ * @param {*} keyValueSeparator
+ * @param {*} pairSeparator
+ * @example
+ * // returns "firstName=Alex,age=34"
+ * objectJoin({ firstName: 'Alex', age: 34 }, '=', ',')
+ * @returns
+ */
+const objectJoin = function (
+  obj,
+  keyValueSeparator = ',',
+  pairSeparator = ','
+) {
+  return Object.entries(obj)
+    .map(([k, v]) => `${k}${keyValueSeparator}${v}`)
+    .join(pairSeparator);
+};
+
+/**
+ * @typedef {object} HarParameterObject - An object that describes a parameter in a HAR
+ * @property {string} name - The name of the parameter
+ * @property {string} value - The value of the parameter
+ */
+
+/**
+ * Returns an array of HAR parameter objects for the specified parameter and value.
+ *
+ * While it is quite often that a singleton array is returned, when `explode` is
+ * true multiple objects may be returned.
+ *
+ * See https://swagger.io/docs/specification/serialization for the logic of how value of
+ * the return objects are calculated
+ *
+ * @param {Object} parameter  - An OpenAPI Parameter object
+ * @param {string} name       - The name of the parameter
+ * @param {string} in         - One of the values: `path`, `query`, `header`, `cookie`
+ * @param {string} [style]    - Optional: One of the OpenAPI styles {e.g. form, simple, label, matrix, ...}
+ * @param {boolean} [explode] - Optional: Whether or not arrays and objects should be exploded
+ * @param {*}      value      - The value to use in the query string object. Since `parameter`
+ *                              has many properties that could be a candidate for the value this
+ *                              parameter is used to explicitly state which value should be used.
+ * @return {HarParameterObject[]} - An array of query string objects
+ */
+const createHarParameterObjects = function (
+  { name, in: location, style, explode },
+  value
+) {
+  if (!name || !location || typeof value === 'undefined') {
+    throw 'Required parameters missing';
+  }
+
+  const prefix = getPrefix(style);
+  const paramId = getParamId(style, name);
+
+  if (isPrimitive(value)) {
+    return [{ name, value: prefix + paramId + value }];
+  }
+
+  const objects = [];
+  style = style ?? getDefaultStyleForLocation(location);
+  explode = explode ?? getDefaultExplodeForStyle(style);
+
+  if (location === 'query' || location === 'cookie') {
+    const separator = getArrayElementSeparator(style);
+    if (Array.isArray(value)) {
+      if (explode) {
+        objects.push(
+          ...value.map((entry) => {
+            return { name, value: entry + '' };
+          })
+        );
+      } else {
+        objects.push({ name, value: value.join(separator) });
+      }
+    } else if (value && typeof value === 'object') {
+      if (style === 'deepObject') {
+        objects.push(
+          ...Object.entries(value).map(([k, v]) => {
+            return { name: `${name}[${k}]`, value: v + '' };
+          })
+        );
+      } else if (explode) {
+        objects.push(
+          ...Object.entries(value).map(([k, v]) => {
+            return { name: k, value: v + '' };
+          })
+        );
+      } else {
+        objects.push({
+          name,
+          value: objectJoin(value),
+        });
+      }
+    }
+  } else if (location === 'path' || location === 'header') {
+    const separator = getSeparator(style);
+
+    if (Array.isArray(value)) {
+      objects.push({
+        name,
+        value:
+          prefix + paramId + value.join(explode ? separator + paramId : ','),
+      });
+    } else if (value && typeof value === 'object') {
+      if (explode) {
+        objects.push({
+          name,
+          value: prefix + objectJoin(value, '=', separator),
+        });
+      } else {
+        objects.push({
+          name,
+          value: prefix + paramId + objectJoin(value),
+        });
+      }
+    }
+  }
+
+  return objects;
+};
+
+/**
  * Get the payload definition for the given endpoint (path + method) from the
  * given OAI specification. References within the payload definition are
  * resolved.
@@ -552,4 +767,5 @@ const resolveRef = function (openApi, ref) {
 module.exports = {
   getAll: openApiToHarList,
   getEndpoint: createHar,
+  createHarParameterObjects,
 };
