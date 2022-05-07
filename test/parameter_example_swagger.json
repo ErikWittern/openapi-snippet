@@ -32,6 +32,7 @@
             "description": "tags to filter by",
             "required": false,
             "style": "form",
+            "explode": false,
             "example": ["dog", "cat"],
             "schema": {
               "type": "array",
@@ -84,6 +85,7 @@
           "description": "tags to filter by",
           "required": false,
           "style": "form",
+          "explode": false,
           "example": ["dog", "cat"],
           "schema": {
             "type": "array",
@@ -153,6 +155,7 @@
             "in": "query",
             "description": "A comma-seperated list of species IDs",
             "required": false,
+            "explode": false,
             "example": [1, 2],
             "schema": {
               "type": "array",
