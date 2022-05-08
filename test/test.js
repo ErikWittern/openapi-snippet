@@ -1393,3 +1393,94 @@ test('Path parameter with template /pets/{.id*} with array value', function (t) 
   runParameterTest(t, testOptions);
   t.end();
 });
+
+test('Path parameter with template /pets/{;id} with primitive value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: 5,
+    style: 'matrix',
+    explode: false,
+    locationOfExample: 'example',
+    expectedString: '/pets/;id=5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{;id*} with primitive value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: 5,
+    explode: true,
+    style: 'matrix',
+    locationOfExample: 'example',
+    expectedString: '/pets/;id=5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+test('Path parameter with template /pets/{;id} with object value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    style: 'matrix',
+    explode: false,
+    locationOfExample: 'example',
+    expectedString: '/pets/;id=role,admin,firstName,Alex,age,34',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{;id*} with object value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    explode: true,
+    style: 'matrix',
+    locationOfExample: 'example',
+    expectedString: '/pets/;role=admin;firstName=Alex;age=34',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{;id} with array value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: false,
+    style: 'matrix',
+    locationOfExample: 'example',
+    expectedString: 'pets/;id=3,4,5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{;id*} with array value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: true,
+    style: 'matrix',
+    locationOfExample: 'example',
+    expectedString: 'pets/;id=3;id=4;id=5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
