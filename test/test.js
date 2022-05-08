@@ -780,7 +780,7 @@ test('Query: /users{?id} with id=[3,4,5], spaceDelimited', function (t) {
     explode: false,
   };
 
-  const expected = [{ name: 'id', value: '3%204%205' }];
+  const expected = [{ name: 'id', value: '3 4 5' }];
   const actual = createHarParameterObjects(parameter, [3, 4, 5]);
   t.deepEqual(actual, expected);
   t.end();
@@ -1238,6 +1238,34 @@ test('Query parameter with template {?id*} with array value', function (t) {
     explode: true,
     locationOfExample: 'default',
     expectedString: 'id=3&id=4&id=5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Query parameter with with spaceDelimited style array value', function (t) {
+  const testOptions = Object.assign({}, allPetsScenario, {
+    in: 'query',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    style: 'spaceDelimited',
+    explode: false,
+    locationOfExample: 'default',
+    expectedString: 'id=3%204%205',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Query parameter with pipeDelimited array value', function (t) {
+  const testOptions = Object.assign({}, allPetsScenario, {
+    in: 'query',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    style: 'pipeDelimited',
+    explode: false,
+    locationOfExample: 'default',
+    expectedString: 'id=3%7C4%7C5',
   });
   runParameterTest(t, testOptions);
   t.end();

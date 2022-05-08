@@ -157,7 +157,7 @@ const getDefaultExplodeForStyle = function (style) {
 const getArrayElementSeparator = function (style) {
   let separator = ',';
   if (style === 'spaceDelimited') {
-    separator = '%20';
+    separator = ' ';
   } else if (style === 'pipeDelimited') {
     separator = '|';
   }
