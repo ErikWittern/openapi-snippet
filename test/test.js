@@ -1572,3 +1572,39 @@ test('Header parameter with template {id*} with array value', function (t) {
   runParameterTest(t, testOptions);
   t.end();
 });
+
+test('Query parameter with sample given by examples key', function (t) {
+  const testOptions = Object.assign({}, allPetsScenario, {
+    in: 'query',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    locationOfExample: 'examples',
+    expectedString: 'id=3&id=4&id=5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with sample given by examples key', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    locationOfExample: 'examples',
+    expectedString: '/pets/3,4,5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Header parameter with sample given by examples key', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'header',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    locationOfExample: 'examples',
+    expectedString: "--header 'id: 3,4,5'",
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});

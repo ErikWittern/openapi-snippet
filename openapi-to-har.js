@@ -441,6 +441,8 @@ const getParameterValues = function (param, values) {
     value = values[param.name];
   } else if (typeof param.example !== 'undefined') {
     value = param.example;
+  } else if (typeof param.examples !== 'undefined') {
+    value = Object.values(param.examples)[0].value;
   } else if (
     typeof param.schema !== 'undefined' &&
     typeof param.schema.example !== 'undefined'
@@ -568,12 +570,11 @@ const getFullPath = function (openApi, path, method) {
         typeof param.in !== 'undefined' &&
         param.in.toLowerCase() === 'path'
       ) {
-        if (typeof param.example !== 'undefined') {
+        const parameterValues = getParameterValues(param);
+        if (parameterValues.length > 0) {
           // only if the schema has an example value
-          const parameterValue = createHarParameterObjects(
-            param,
-            param.example
-          )[0].value;
+          // technically parameterValues should only ever have 0 or 1 entries
+          const parameterValue = parameterValues[0].value;
           fullPath = fullPath.replace('{' + param.name + '}', parameterValue);
         }
       }
