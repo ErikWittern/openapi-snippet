@@ -570,7 +570,11 @@ const getFullPath = function (openApi, path, method) {
       ) {
         if (typeof param.example !== 'undefined') {
           // only if the schema has an example value
-          fullPath = fullPath.replace('{' + param.name + '}', param.example);
+          const parameterValue = createHarParameterObjects(
+            param,
+            param.example
+          )[0].value;
+          fullPath = fullPath.replace('{' + param.name + '}', parameterValue);
         }
       }
     }

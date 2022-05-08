@@ -1186,7 +1186,7 @@ const singlePetScenario = {
 test('Query parameter with template {?id} with object value', function (t) {
   const testOptions = Object.assign({}, allPetsScenario, {
     in: 'query',
-    parameterName: 'objectValue',
+    parameterName: 'id',
     value: {
       role: 'admin',
       firstName: 'Alex',
@@ -1194,7 +1194,7 @@ test('Query parameter with template {?id} with object value', function (t) {
     },
     explode: false,
     locationOfExample: 'default',
-    expectedString: 'objectValue=role%2Cadmin%2CfirstName%2CAlex%2Cage%2C34',
+    expectedString: 'id=role%2Cadmin%2CfirstName%2CAlex%2Cage%2C34',
   });
   runParameterTest(t, testOptions);
   t.end();
@@ -1203,7 +1203,7 @@ test('Query parameter with template {?id} with object value', function (t) {
 test('Query parameter with template {?id*} with object value', function (t) {
   const testOptions = Object.assign({}, allPetsScenario, {
     in: 'query',
-    parameterName: 'objectValue',
+    parameterName: 'id',
     value: {
       role: 'admin',
       firstName: 'Alex',
@@ -1220,11 +1220,11 @@ test('Query parameter with template {?id*} with object value', function (t) {
 test('Query parameter with template {?id} with array value', function (t) {
   const testOptions = Object.assign({}, allPetsScenario, {
     in: 'query',
-    parameterName: 'objectValue',
+    parameterName: 'id',
     value: [3, 4, 5],
     explode: false,
     locationOfExample: 'default',
-    expectedString: 'objectValue=3%2C4%2C5',
+    expectedString: 'id=3%2C4%2C5',
   });
   runParameterTest(t, testOptions);
   t.end();
@@ -1233,11 +1233,71 @@ test('Query parameter with template {?id} with array value', function (t) {
 test('Query parameter with template {?id*} with array value', function (t) {
   const testOptions = Object.assign({}, allPetsScenario, {
     in: 'query',
-    parameterName: 'objectValue',
+    parameterName: 'id',
     value: [3, 4, 5],
     explode: true,
     locationOfExample: 'default',
-    expectedString: 'objectValue=3&objectValue=4&objectValue=5',
+    expectedString: 'id=3&id=4&id=5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{id} with object value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    explode: false,
+    locationOfExample: 'example',
+    expectedString: '/pets/role,admin,firstName,Alex,age,34',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{id*} with object value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    explode: true,
+    locationOfExample: 'example',
+    expectedString: '/pets/role=admin,firstName=Alex,age=34',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{id} with array value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: false,
+    locationOfExample: 'example',
+    expectedString: 'pets/3,4,5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{id*} with array value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: true,
+    locationOfExample: 'example',
+    expectedString: 'pets/3,4,5',
   });
   runParameterTest(t, testOptions);
   t.end();

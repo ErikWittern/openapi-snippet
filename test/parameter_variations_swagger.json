@@ -27,8 +27,80 @@
                 "operationId": "getPet",
                 "parameters": [
                     {
-                        "name": "objectValue",
+                        "name": "id",
                         "in": "query",
+                        "explode": false,
+                        "example": {
+                            "role": "admin",
+                            "firstName": "Alex",
+                            "age": 34
+                        },
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    {
+                        "name": "tags",
+                        "in": "query",
+                        "description": "tags to filter by",
+                        "required": false,
+                        "style": "form",
+                        "explode": false,
+                        "example": [
+                            "dog",
+                            "cat"
+                        ],
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "maximum number of results to return",
+                        "example": 10,
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "pet response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Pet"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/pets/{id}": {
+            "get": {
+                "description": "Get Pets from store",
+                "operationId": "getPet",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
                         "explode": false,
                         "example": {
                             "role": "admin",
