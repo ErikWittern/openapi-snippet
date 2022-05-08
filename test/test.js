@@ -1512,3 +1512,63 @@ test('Path parameter with template /pets/{;id*} with array value', function (t) 
   runParameterTest(t, testOptions);
   t.end();
 });
+
+test('Header parameter with template {id} with object value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'header',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    explode: false,
+    locationOfExample: 'example',
+    expectedString: "--header 'id: role,admin,firstName,Alex,age,34'",
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Header parameter with template {id*} with object value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'header',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    explode: true,
+    locationOfExample: 'example',
+    expectedString: "--header 'id: role=admin,firstName=Alex,age=34'",
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Header parameter with template {id} with array value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'header',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: false,
+    locationOfExample: 'example',
+    expectedString: "--header 'id: 3,4,5'",
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Header parameter with template {id*} with array value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'header',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: true,
+    locationOfExample: 'example',
+    expectedString: "--header 'id: 3,4,5'",
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
