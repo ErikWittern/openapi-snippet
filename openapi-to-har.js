@@ -429,10 +429,10 @@ const getBaseUrl = function (openApi, path, method) {
 };
 
 /**
- * Gets an object describing the the paremeters (header or query) in a given OpenAPI method
+ * Gets an object describing the parameters (header or query) in a given OpenAPI method
  * @param  {Object} param  parameter values to use in snippet
  * @param  {Object} values Optional: query parameter values to use in the snippet if present
- * @return {Object}        Object describing the parameters in a given OpenAPI method or path
+ * @return {HarParameterObject[]} Array of objects describing the parameters in a given OpenAPI method or path
  */
 const getParameterValues = function (param, values) {
   let value =
@@ -450,7 +450,7 @@ const getParameterValues = function (param, values) {
     value = param.example;
   }
 
-  return createHarParameterObjects(param, value)[0];
+  return createHarParameterObjects(param, value);
 };
 
 /**
@@ -459,9 +459,12 @@ const getParameterValues = function (param, values) {
  * @param  {Object} openApi    OpenApi document
  * @param  {Object} parameters Objects described in the document to parse into the query string
  * @param  {Object} values     Optional: query parameter values to use in the snippet if present
- * @return {Object}            Object describing the parameters for a method or path
+ * @return {Object.<string, {name: string, value: string}[]>} Object describing the parameters for a method or path.
+ * Each key in the return object will have at least one entry it's is value array. But exploded values
+ * in query parameters may have more than one.
  */
 const parseParametersToQuery = function (openApi, parameters, values) {
+  /** @type {Object.<string, {name: string, value: string}[]>} */
   const queryStrings = {};
 
   for (let i in parameters) {
@@ -483,7 +486,7 @@ const parseParametersToQuery = function (openApi, parameters, values) {
     }
     if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query') {
       // param.name is a safe key, because the spec defines
-      // that name MUST be unique
+      // that name MUST be uniques
       queryStrings[param.name] = getParameterValues(param, values);
     }
   }
@@ -499,7 +502,7 @@ const parseParametersToQuery = function (openApi, parameters, values) {
  * @param  {string} path    Key of the path
  * @param  {string} method  Key of the method
  * @param  {Object} values  Optional: query parameter values to use in the snippet if present
- * @return {array}          List of objects describing the query strings
+ * @return {{name: string, value: string}[]} List of objects describing the query strings
  */
 const getQueryStrings = function (openApi, path, method, values) {
   // Set the optional parameter if it's not provided
@@ -507,7 +510,10 @@ const getQueryStrings = function (openApi, path, method, values) {
     values = {};
   }
 
+  /** @type {Object.<string, {name: string, value: string}[]>} */
   let pathQueryStrings = {};
+
+  /** @type {Object.<string, {name: string, value: string}[]>} */
   let methodQueryStrings = {};
 
   // First get any parameters from the path
@@ -533,7 +539,10 @@ const getQueryStrings = function (openApi, path, method, values) {
   // it but can never remove it.
   // https://swagger.io/specification/
   const queryStrings = Object.assign(pathQueryStrings, methodQueryStrings);
-  return Object.values(queryStrings);
+
+  // Convert the list of lists in Object.values(queryStrings) into a list
+
+  return Object.values(queryStrings).flatMap((entry) => entry);
 };
 
 /**
@@ -601,7 +610,7 @@ const getHeadersArray = function (openApi, path, method) {
         typeof param.in !== 'undefined' &&
         param.in.toLowerCase() === 'header'
       ) {
-        headers.push(getParameterValues(param));
+        headers.push(...getParameterValues(param));
       }
     }
   }

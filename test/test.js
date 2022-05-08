@@ -17,6 +17,7 @@ const ParameterExampleReferenceAPI = require('./parameter_example_swagger.json')
 const FormDataExampleReferenceAPI = require('./form_data_example.json');
 const FormUrlencodedExampleAPI = require('./form_urlencoded_example.json');
 const MultipleRequestContentReferenceAPI = require('./multiple_request_content.json');
+const ParameterVariationsAPI = require('./parameter_variations_swagger.json');
 
 test('Getting snippets should not result in error or undefined', function (t) {
   t.plan(1);
@@ -1050,5 +1051,194 @@ test('Cookie: id={id} with id = {role: "admin", firstName: "Alex", age: 34}', fu
   });
 
   t.deepEqual(actual, expected);
+  t.end();
+});
+
+//// More Tests with Snippets
+
+const setParameterValues = function (
+  parameter,
+  value,
+  locationOfParameter,
+  locationOfExample,
+  style,
+  explode
+) {
+  if (typeof style === 'undefined') {
+    delete parameter.style;
+  } else {
+    parameter.style = style;
+  }
+  if (typeof explode === 'undefined') {
+    delete parameter.explode;
+  } else {
+    parameter.explode = explode;
+  }
+  delete parameter.default;
+  delete parameter.example;
+  delete parameter.examples;
+
+  parameter.in = locationOfParameter;
+
+  if (locationOfExample === 'default') {
+    parameter.default = value;
+  } else if (locationOfExample === 'example') {
+    parameter.example = value;
+  } else if (locationOfExample === 'examples') {
+    parameter.examples = {
+      firstExample: {
+        summary: 'This is a summary',
+        value,
+      },
+    };
+  }
+};
+
+/**
+ * The set of options for testing a parameter scenario
+ * @typedef {Object} ParameterOptions
+ * @property {string} api - The API to use for the test
+ * @property {string} path - The path within the API to use for the test
+ * @property {string} method - The method to use on the path
+ * @property {string} in - The location of the parameter: `query`, `path`, `header`
+ * @property {string} parameterName - The name of the parameter to test with
+ * @property {*?} value - The value to assign to either `default`, `example` or the first entry in `examples`
+ * @property {string} locationOfExample - The location of the example value: `default`, `example`, `examples`.
+ * This parameter determines which of these three locations will have the specified `value`. The other
+ * locations will be `undefined`.
+ * @property {string?} style - Optional: The serialization style for the parameter. Only `form` and `simple` are fully supported.
+ * Per the spec: defaults to `form` for `query` and `cookie` params and defaults to `simple` for `path` and `header` params.
+ * @property {boolean?} explode - Optional: Determines if array and object values should be "exploded" into multiple key-value pairs.
+ * Per the spec: defaults to `true` only for `form` parameters. Defaults to `false` for all other styles.
+ * @property {string} expectedString - A string that is expected to be found in the generated `shell_curl`
+ * code snippet for the specified operation/parameter.
+ * @property {Object?} values - Optional: A set of key value pairs to use as parameter values.
+ */
+
+/**
+ *
+ * @param {*} t
+ * @param {ParameterOptions} options - The test scenario
+ */
+const runParameterTest = function (t, options) {
+  const {
+    api,
+    path,
+    method,
+    in: locationOfParameter,
+    parameterName,
+    value,
+    locationOfExample,
+    style,
+    explode,
+    expectedString,
+    values,
+  } = options;
+
+  const apiCopy = JSON.parse(JSON.stringify(api));
+  const parameters = apiCopy.paths[path][method].parameters;
+  const parameter = parameters.find((p) => p.name === parameterName);
+  setParameterValues(
+    parameter,
+    value,
+    locationOfParameter,
+    locationOfExample,
+    style,
+    explode
+  );
+  const result = OpenAPISnippets.getEndpointSnippets(
+    apiCopy,
+    path,
+    method,
+    ['shell_curl'],
+    values
+  );
+  const snippet = result.snippets[0].content;
+
+  // note: the shell_curl snippets uriEncode commas in query parameters (but not path parameters).
+  // So we'll uriEncode and commas that might be in `expectedString`
+
+  const encodedCommaExpectationString =
+    locationOfParameter === 'query'
+      ? expectedString.replaceAll(',', '%2C')
+      : expectedString;
+
+  t.true(
+    snippet.includes(encodedCommaExpectationString),
+    `expected '${encodedCommaExpectationString}' in '${snippet}'`
+  );
+};
+
+const allPetsScenario = {
+  api: ParameterVariationsAPI,
+  path: '/pets',
+  method: 'get',
+  parameterName: 'id',
+};
+
+const singlePetScenario = {
+  api: ParameterVariationsAPI,
+  path: '/pets/{id}',
+  method: 'get',
+  parameterName: 'id',
+};
+
+test('Query parameter with template {?id} with object value', function (t) {
+  const testOptions = Object.assign({}, allPetsScenario, {
+    in: 'query',
+    parameterName: 'objectValue',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    explode: false,
+    locationOfExample: 'default',
+    expectedString: 'objectValue=role%2Cadmin%2CfirstName%2CAlex%2Cage%2C34',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Query parameter with template {?id*} with object value', function (t) {
+  const testOptions = Object.assign({}, allPetsScenario, {
+    in: 'query',
+    parameterName: 'objectValue',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    explode: true,
+    locationOfExample: 'default',
+    expectedString: 'role=admin&firstName=Alex&age=34',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Query parameter with template {?id} with array value', function (t) {
+  const testOptions = Object.assign({}, allPetsScenario, {
+    in: 'query',
+    parameterName: 'objectValue',
+    value: [3, 4, 5],
+    explode: false,
+    locationOfExample: 'default',
+    expectedString: 'objectValue=3%2C4%2C5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Query parameter with template {?id*} with array value', function (t) {
+  const testOptions = Object.assign({}, allPetsScenario, {
+    in: 'query',
+    parameterName: 'objectValue',
+    value: [3, 4, 5],
+    explode: true,
+    locationOfExample: 'default',
+    expectedString: 'objectValue=3&objectValue=4&objectValue=5',
+  });
+  runParameterTest(t, testOptions);
   t.end();
 });
