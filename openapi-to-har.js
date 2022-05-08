@@ -44,7 +44,7 @@ const createHar = function (openApi, path, method, queryParamValues) {
     headers: getHeadersArray(openApi, path, method),
     queryString: getQueryStrings(openApi, path, method, queryParamValues),
     httpVersion: 'HTTP/1.1',
-    cookies: [],
+    cookies: getCookies(openApi, path, method),
     headersSize: 0,
     bodySize: 0,
   };
@@ -612,6 +612,17 @@ const getFullPath = function (openApi, path, method) {
   });
 
   return fullPath;
+};
+
+/**
+ * Get an array of objects providing sample values for cookies
+ *
+ * @param  {Object} openApi OpenAPI document
+ * @param  {string} path    Key of the path
+ * @param  {string} method  Key of the method
+ */
+const getCookies = function (openApi, path, method) {
+  return getParameterCollectionIn(openApi, path, method, 'cookie');
 };
 
 /**

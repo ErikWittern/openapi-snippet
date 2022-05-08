@@ -1645,3 +1645,59 @@ test('Header parameter defined in operation (not in path) object', function (t) 
   runParameterTest(t, testOptions);
   t.end();
 });
+
+test('Cookie parameter with explode = true', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'cookie',
+    parameterName: 'id',
+    value: 5,
+    explode: true,
+    locationOfExample: 'example',
+    expectedString: '--cookie id=5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Cookie parameter with template id={id} with primitive value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'cookie',
+    parameterName: 'id',
+    value: 5,
+    explode: false,
+    locationOfExample: 'examples',
+    expectedString: '--cookie id=5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Cookie parameter with template id={id} with object value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'cookie',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    explode: false,
+    locationOfExample: 'default',
+    expectedString: '--cookie id=role%2Cadmin%2CfirstName%2CAlex%2Cage%2C34',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Cookie parameter with template id={id} with array value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'cookie',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: false,
+    locationOfExample: 'example',
+    expectedString: '--cookie id=3%2C4%2C5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
