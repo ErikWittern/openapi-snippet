@@ -460,12 +460,18 @@ const getParameterValues = function (param, values) {
  *
  * @param  {Object} openApi    OpenApi document
  * @param  {Object} parameters Objects described in the document to parse into the query string
+ * @param  {string} location   One of `path`, `query`, `header` or `cookie`
  * @param  {Object} values     Optional: query parameter values to use in the snippet if present
  * @return {Object.<string, {name: string, value: string}[]>} Object describing the parameters for a method or path.
  * Each key in the return object will have at least one entry it's is value array. But exploded values
  * in query parameters may have more than one.
  */
-const parseParametersToQuery = function (openApi, parameters, values) {
+const parseParametersToQuery = function (
+  openApi,
+  parameters,
+  location,
+  values
+) {
   /** @type {Object.<string, {name: string, value: string}[]>} */
   const queryStrings = {};
 
@@ -486,7 +492,10 @@ const parseParametersToQuery = function (openApi, parameters, values) {
         }
       }
     }
-    if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query') {
+    if (
+      typeof param.in !== 'undefined' &&
+      param.in.toLowerCase() === location
+    ) {
       // param.name is a safe key, because the spec defines
       // that name MUST be uniques
       queryStrings[param.name] = getParameterValues(param, values);
@@ -494,6 +503,55 @@ const parseParametersToQuery = function (openApi, parameters, values) {
   }
 
   return queryStrings;
+};
+
+const getParameterCollectionIn = function (
+  openApi,
+  path,
+  method,
+  location,
+  values
+) {
+  // Set the optional parameter if it's not provided
+  if (typeof values === 'undefined') {
+    values = {};
+  }
+
+  /** @type {Object.<string, {name: string, value: string}[]>} */
+  let pathParameters = {};
+
+  /** @type {Object.<string, {name: string, value: string}[]>} */
+  let operationParameters = {};
+
+  // First get any parameters from the path
+  if (typeof openApi.paths[path].parameters !== 'undefined') {
+    pathParameters = parseParametersToQuery(
+      openApi,
+      openApi.paths[path].parameters,
+      location,
+      values
+    );
+  }
+
+  if (typeof openApi.paths[path][method].parameters !== 'undefined') {
+    operationParameters = parseParametersToQuery(
+      openApi,
+      openApi.paths[path][method].parameters,
+      location,
+      values
+    );
+  }
+
+  // Merge parameters, with method overriding path
+  // from the spec:
+  // If a parameter is already defined at the Path Item, the new definition will override
+  // it but can never remove it.
+  // https://swagger.io/specification/
+  const queryStrings = Object.assign(pathParameters, operationParameters);
+
+  // Convert the list of lists in Object.values(queryStrings) into a list
+
+  return Object.values(queryStrings).flatMap((entry) => entry);
 };
 
 /**
@@ -507,44 +565,7 @@ const parseParametersToQuery = function (openApi, parameters, values) {
  * @return {{name: string, value: string}[]} List of objects describing the query strings
  */
 const getQueryStrings = function (openApi, path, method, values) {
-  // Set the optional parameter if it's not provided
-  if (typeof values === 'undefined') {
-    values = {};
-  }
-
-  /** @type {Object.<string, {name: string, value: string}[]>} */
-  let pathQueryStrings = {};
-
-  /** @type {Object.<string, {name: string, value: string}[]>} */
-  let methodQueryStrings = {};
-
-  // First get any parameters from the path
-  if (typeof openApi.paths[path].parameters !== 'undefined') {
-    pathQueryStrings = parseParametersToQuery(
-      openApi,
-      openApi.paths[path].parameters,
-      values
-    );
-  }
-
-  if (typeof openApi.paths[path][method].parameters !== 'undefined') {
-    methodQueryStrings = parseParametersToQuery(
-      openApi,
-      openApi.paths[path][method].parameters,
-      values
-    );
-  }
-
-  // Merge query strings, with method overriding path
-  // from the spec:
-  // If a parameter is already defined at the Path Item, the new definition will override
-  // it but can never remove it.
-  // https://swagger.io/specification/
-  const queryStrings = Object.assign(pathQueryStrings, methodQueryStrings);
-
-  // Convert the list of lists in Object.values(queryStrings) into a list
-
-  return Object.values(queryStrings).flatMap((entry) => entry);
+  return getParameterCollectionIn(openApi, path, method, 'query', values);
 };
 
 /**
