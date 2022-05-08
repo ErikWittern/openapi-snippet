@@ -94,6 +94,23 @@
             }
         },
         "/pets/{id}": {
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "explode": false,
+                    "schema": {
+                        "type": "integer"
+                    }
+                },
+                {
+                    "name": "X-MYHEADER",
+                    "in": "header",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
             "get": {
                 "description": "Get Pets from store",
                 "operationId": "getPet",
@@ -109,6 +126,13 @@
                         },
                         "schema": {
                             "type": "object"
+                        }
+                    },
+                    {
+                        "name": "X-MYHEADER",
+                        "in": "header",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     {

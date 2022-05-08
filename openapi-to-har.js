@@ -431,12 +431,18 @@ const getBaseUrl = function (openApi, path, method) {
 /**
  * Gets an object describing the parameters (header or query) in a given OpenAPI method
  * @param  {Object} param  parameter values to use in snippet
+ * @param  {string} location One of `path`, `header`, `query`, `cookie`
  * @param  {Object} values Optional: query parameter values to use in the snippet if present
  * @return {HarParameterObject[]} Array of objects describing the parameters in a given OpenAPI method or path
  */
-const getParameterValues = function (param, values) {
+const getParameterValues = function (param, location, values) {
   let value =
     'SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE';
+  if (location === 'path') {
+    // then default to the original place holder value (e.b. '{id}')
+    value = `{${param.name}}`;
+  }
+
   if (values && typeof values[param.name] !== 'undefined') {
     value = values[param.name];
   } else if (typeof param.example !== 'undefined') {
@@ -462,7 +468,7 @@ const getParameterValues = function (param, values) {
  * @param  {Object} parameters Objects described in the document to parse into the query string
  * @param  {string} location   One of `path`, `query`, `header` or `cookie`
  * @param  {Object} values     Optional: query parameter values to use in the snippet if present
- * @return {Object.<string, {name: string, value: string}[]>} Object describing the parameters for a method or path.
+ * @return {Object.<string, HarParameterObject[]>} Object describing the parameters for a method or path.
  * Each key in the return object will have at least one entry it's is value array. But exploded values
  * in query parameters may have more than one.
  */
@@ -472,7 +478,7 @@ const parseParametersToQuery = function (
   location,
   values
 ) {
-  /** @type {Object.<string, {name: string, value: string}[]>} */
+  /** @type {Object.<string, HarParameterObject[]>} */
   const queryStrings = {};
 
   for (let i in parameters) {
@@ -498,13 +504,27 @@ const parseParametersToQuery = function (
     ) {
       // param.name is a safe key, because the spec defines
       // that name MUST be uniques
-      queryStrings[param.name] = getParameterValues(param, values);
+      queryStrings[param.name] = getParameterValues(param, location, values);
     }
   }
 
   return queryStrings;
 };
 
+/**
+ * Examines all of the parameters in the specified path and operation looking
+ * for those of the specific `location` specified
+ * It resolves any references to schemas or parameters as it does so.
+ * It examines the `example`, `examples`, `schema.example` and `default`
+ * keys looking for one sample value. It then returns an array of HAR
+ * parameter objects
+ * @param  {Object} openApi OpenAPI document
+ * @param  {string} path    Key of the path
+ * @param  {string} method  Key of the method
+ * @param  {string} location One of `path`, `query`, `header`, `cookie`
+ * @param  {HarParameterObject[]} - A list of parameter objects for the specified location
+ * @returns
+ */
 const getParameterCollectionIn = function (
   openApi,
   path,
@@ -517,10 +537,10 @@ const getParameterCollectionIn = function (
     values = {};
   }
 
-  /** @type {Object.<string, {name: string, value: string}[]>} */
+  /** @type {Object.<string, HarParameterObject[]>} */
   let pathParameters = {};
 
-  /** @type {Object.<string, {name: string, value: string}[]>} */
+  /** @type {Object.<string, HarParameterObject[]>} */
   let operationParameters = {};
 
   // First get any parameters from the path
@@ -547,6 +567,8 @@ const getParameterCollectionIn = function (
   // If a parameter is already defined at the Path Item, the new definition will override
   // it but can never remove it.
   // https://swagger.io/specification/
+
+  /** @type {Object.<string, HarParameterObject[]} */
   const queryStrings = Object.assign(pathParameters, operationParameters);
 
   // Convert the list of lists in Object.values(queryStrings) into a list
@@ -562,7 +584,7 @@ const getParameterCollectionIn = function (
  * @param  {string} path    Key of the path
  * @param  {string} method  Key of the method
  * @param  {Object} values  Optional: query parameter values to use in the snippet if present
- * @return {{name: string, value: string}[]} List of objects describing the query strings
+ * @return {HarParameterObject[]} List of objects describing the query strings
  */
 const getQueryStrings = function (openApi, path, method, values) {
   return getParameterCollectionIn(openApi, path, method, 'query', values);
@@ -578,29 +600,17 @@ const getQueryStrings = function (openApi, path, method, values) {
  */
 const getFullPath = function (openApi, path, method) {
   let fullPath = path;
-  const parameters =
-    openApi.paths[path].parameters || openApi.paths[path][method].parameters;
 
-  if (typeof parameters !== 'undefined') {
-    for (let i in parameters) {
-      let param = parameters[i];
-      if (typeof param['$ref'] === 'string' && /^#/.test(param['$ref'])) {
-        param = resolveRef(openApi, param['$ref']);
-      }
-      if (
-        typeof param.in !== 'undefined' &&
-        param.in.toLowerCase() === 'path'
-      ) {
-        const parameterValues = getParameterValues(param);
-        if (parameterValues.length > 0) {
-          // only if the schema has an example value
-          // technically parameterValues should only ever have 0 or 1 entries
-          const parameterValue = parameterValues[0].value;
-          fullPath = fullPath.replace('{' + param.name + '}', parameterValue);
-        }
-      }
-    }
-  }
+  const pathParameters = getParameterCollectionIn(
+    openApi,
+    path,
+    method,
+    'path'
+  );
+  pathParameters.forEach(({ name, value }) => {
+    fullPath = fullPath.replace('{' + name + '}', value);
+  });
+
   return fullPath;
 };
 
@@ -611,7 +621,7 @@ const getFullPath = function (openApi, path, method) {
  * @param  {Object} openApi OpenAPI document
  * @param  {string} path    Key of the path
  * @param  {string} method  Key of the method
- * @return {array}          List of objects describing the header
+ * @return {HarParameterObject[]} List of objects describing the header
  */
 const getHeadersArray = function (openApi, path, method) {
   const headers = [];
@@ -629,17 +639,7 @@ const getHeadersArray = function (openApi, path, method) {
   }
 
   // headers defined in path object:
-  if (typeof pathObj.parameters !== 'undefined') {
-    for (let k in pathObj.parameters) {
-      const param = pathObj.parameters[k];
-      if (
-        typeof param.in !== 'undefined' &&
-        param.in.toLowerCase() === 'header'
-      ) {
-        headers.push(...getParameterValues(param));
-      }
-    }
-  }
+  headers.push(...getParameterCollectionIn(openApi, path, method, 'header'));
 
   // security:
   let basicAuthDef;

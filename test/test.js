@@ -32,6 +32,7 @@ test('An invalid target should result in error', function (t) {
   try {
     const result = OpenAPISnippets.getSnippets(BloggerOpenAPI, ['node_asfd']);
     console.log(result);
+    t.end();
   } catch (err) {
     t.equal(err.toString(), 'Error: Invalid target: node_asfd');
   }
@@ -1604,6 +1605,42 @@ test('Header parameter with sample given by examples key', function (t) {
     value: [3, 4, 5],
     locationOfExample: 'examples',
     expectedString: "--header 'id: 3,4,5'",
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Header parameter defined in operation overrides header parameter of same name in path', function (t) {
+  const result = OpenAPISnippets.getEndpointSnippets(
+    ParameterVariationsAPI,
+    '/pets/{id}',
+    'get',
+    ['shell_curl']
+  );
+  const snippet = result.snippets[0].content;
+  t.match(snippet, /--header 'X-MYHEADER: SOME_STRING_VALUE'/);
+  t.end();
+});
+
+test('Path parameter defined in operation overrides header parameter of same name in path', function (t) {
+  const result = OpenAPISnippets.getEndpointSnippets(
+    ParameterVariationsAPI,
+    '/pets/{id}',
+    'get',
+    ['shell_curl']
+  );
+  const snippet = result.snippets[0].content;
+  t.match(snippet, /\/pets\/role,admin,firstName,Alex,age,34/);
+  t.end();
+});
+
+test('Header parameter defined in operation (not in path) object', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'header',
+    parameterName: 'X-MYHEADER',
+    value: [3, 4, 5],
+    locationOfExample: 'examples',
+    expectedString: "--header 'X-MYHEADER: 3,4,5'",
   });
   runParameterTest(t, testOptions);
   t.end();
