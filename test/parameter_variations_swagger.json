@@ -198,10 +198,11 @@
                     "required": false,
                     "style": "form",
                     "explode": false,
-                    "example": [
-                        "dog",
-                        "cat"
-                    ],
+                    "examples": {
+                        "firstExample": {
+                            "$ref": "#/components/examples/firstExample"
+                        }
+                    },
                     "schema": {
                         "type": "array",
                         "items": {
@@ -309,6 +310,15 @@
         }
     },
     "components": {
+        "examples": {
+            "firstExample": {
+                "summary": "A first example",
+                "value": [
+                    "dog",
+                    "cat"
+                ]
+            }
+        },
         "schemas": {
             "Pet": {
                 "allOf": [

@@ -430,12 +430,13 @@ const getBaseUrl = function (openApi, path, method) {
 
 /**
  * Gets an object describing the parameters (header or query) in a given OpenAPI method
- * @param  {Object} param  parameter values to use in snippet
- * @param  {string} location One of `path`, `header`, `query`, `cookie`
- * @param  {Object} values Optional: query parameter values to use in the snippet if present
+ * @param  {Object} openApi    OpenApi document
+ * @param  {Object} param      parameter values to use in snippet
+ * @param  {string} location   One of `path`, `header`, `query`, `cookie`
+ * @param  {Object} values     Optional: query parameter values to use in the snippet if present
  * @return {HarParameterObject[]} Array of objects describing the parameters in a given OpenAPI method or path
  */
-const getParameterValues = function (param, location, values) {
+const getParameterValues = function (openApi, param, location, values) {
   let value =
     'SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE';
   if (location === 'path') {
@@ -448,7 +449,14 @@ const getParameterValues = function (param, location, values) {
   } else if (typeof param.example !== 'undefined') {
     value = param.example;
   } else if (typeof param.examples !== 'undefined') {
-    value = Object.values(param.examples)[0].value;
+    let firstExample = Object.values(param.examples)[0];
+    if (
+      typeof firstExample['$ref'] === 'string' &&
+      /^#/.test(firstExample['$ref'])
+    ) {
+      firstExample = resolveRef(openApi, firstExample['$ref']);
+    }
+    value = firstExample.value;
   } else if (
     typeof param.schema !== 'undefined' &&
     typeof param.schema.example !== 'undefined'
@@ -503,8 +511,13 @@ const parseParametersToQuery = function (
       param.in.toLowerCase() === location
     ) {
       // param.name is a safe key, because the spec defines
-      // that name MUST be uniques
-      queryStrings[param.name] = getParameterValues(param, location, values);
+      // that name MUST be unique
+      queryStrings[param.name] = getParameterValues(
+        openApi,
+        param,
+        location,
+        values
+      );
     }
   }
 

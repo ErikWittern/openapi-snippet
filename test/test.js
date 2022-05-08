@@ -1701,3 +1701,16 @@ test('Cookie parameter with template id={id} with array value', function (t) {
   runParameterTest(t, testOptions);
   t.end();
 });
+
+test('A reference in an examples object is resolved', function (t) {
+  const result = OpenAPISnippets.getEndpointSnippets(
+    ParameterVariationsAPI,
+    '/animals',
+    'get',
+    ['shell_curl']
+  );
+
+  const snippet = result.snippets[0].content;
+  t.match(snippet, /tags=dog%2Ccat/);
+  t.end();
+});
