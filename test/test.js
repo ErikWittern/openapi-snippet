@@ -325,3 +325,17 @@ test('Testing the application/x-www-form-urlencoded example case', function (t) 
   t.match(snippet, /.*--data 'secret=secret\+example\+value'.*/);
   t.end();
 });
+
+test('Testing only required parameters are parsed', function (t) {
+  t.plan(2);
+  const result = OpenAPISnippets.getEndpointSnippets(
+    ParameterExampleReferenceAPI,
+    '/animals',
+    'get',
+    ['node_request']
+  );
+  const snippet = result.snippets[0].content;
+  t.true(/ {tags: 'dog,cat', limit: '10'}/.test(snippet));
+  t.false(/length: 12/.test(snippet));
+  t.end();
+});

@@ -30,7 +30,7 @@
             "name": "tags",
             "in": "query",
             "description": "tags to filter by",
-            "required": false,
+            "required": true,
             "style": "form",
             "example": ["dog", "cat"],
             "schema": {
@@ -45,7 +45,7 @@
             "in": "query",
             "description": "maximum number of results to return",
             "example": 10,
-            "required": false,
+            "required": true,
             "schema": {
               "type": "integer",
               "format": "int32"
@@ -82,7 +82,7 @@
           "name": "tags",
           "in": "query",
           "description": "tags to filter by",
-          "required": false,
+          "required": true,
           "style": "form",
           "example": ["dog", "cat"],
           "schema": {
@@ -97,10 +97,20 @@
           "in": "query",
           "description": "maximum number of results to return",
           "example": 10,
-          "required": false,
+          "required": true,
           "schema": {
             "type": "integer",
             "format": "int32"
+          }
+        },
+        {
+          "name": "length",
+          "in": "query",
+          "description": "length property",
+          "example": "12",
+          "required": false,
+          "schema": {
+            "type": "integer"
           }
         }
       ],
@@ -152,7 +162,7 @@
             "name": "id",
             "in": "query",
             "description": "A comma-seperated list of species IDs",
-            "required": false,
+            "required": true,
             "example": [1, 2],
             "schema": {
               "type": "array",

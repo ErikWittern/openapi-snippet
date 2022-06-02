@@ -30,6 +30,7 @@
             "in": "query",
             "name": "pet",
             "description": "Pet to add to the store",
+            "required": true,
             "schema": {
               "$ref": "#/components/schemas/NewPet"
             }

@@ -269,7 +269,7 @@ const parseParametersToQuery = function (openApi, parameters, values) {
         }
       }
     }
-    if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query') {
+    if (typeof param.in !== 'undefined' && param.in.toLowerCase() === 'query' && param.required) {
       // param.name is a safe key, because the spec defines
       // that name MUST be unique
       queryStrings[param.name] = getParameterValues(param, values);
