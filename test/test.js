@@ -3,6 +3,8 @@
 const test = require('tape');
 const OpenAPISnippets = require('../index');
 
+const { createHarParameterObjects } = require('../openapi-to-har');
+
 const InstagramOpenAPI = require('./instagram_swagger.json');
 const BloggerOpenAPI = require('./blogger_swagger.json');
 const GitHubOpenAPI = require('./github_swagger.json');
@@ -15,6 +17,7 @@ const ParameterExampleReferenceAPI = require('./parameter_example_swagger.json')
 const FormDataExampleReferenceAPI = require('./form_data_example.json');
 const FormUrlencodedExampleAPI = require('./form_urlencoded_example.json');
 const MultipleRequestContentReferenceAPI = require('./multiple_request_content.json');
+const ParameterVariationsAPI = require('./parameter_variations_swagger.json');
 
 test('Getting snippets should not result in error or undefined', function (t) {
   t.plan(1);
@@ -29,6 +32,7 @@ test('An invalid target should result in error', function (t) {
   try {
     const result = OpenAPISnippets.getSnippets(BloggerOpenAPI, ['node_asfd']);
     console.log(result);
+    t.end();
   } catch (err) {
     t.equal(err.toString(), 'Error: Invalid target: node_asfd');
   }
@@ -323,5 +327,1390 @@ test('Testing the application/x-www-form-urlencoded example case', function (t) 
   const snippet = result.snippets[0].content;
   t.match(snippet, /.*--data 'id=id\+example\+value'.*/);
   t.match(snippet, /.*--data 'secret=secret\+example\+value'.*/);
+  t.end();
+});
+
+// Tests of createHarParameterObject
+
+// First a set of path parameter tests from here: https://swagger.io/docs/specification/serialization/#path
+
+test('Path: test that style and explode default correctly (to "simple" and "false") when neither is specified for path', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+  };
+
+  const expected = [{ name: 'id', value: '1,2,3' }];
+  const actual = createHarParameterObjects(parameter, [1, 2, 3]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+// Simple style tests:
+
+test('Path: /users/{id*} with id=5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'simple',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: '5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{id*} with id=[3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'simple',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: '3,4,5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{id*} with id= {"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'simple',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: 'role=admin,firstName=Alex,age=34' }];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{id} with id=5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'simple',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{id} with id=[3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'simple',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '3,4,5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{id} with id= {"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'simple',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: 'role,admin,firstName,Alex,age,34' }];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+// Label style tests
+
+test('Path: /users/{.id*} with id=5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'label',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: '.5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{.id*} with id=[3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'label',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: '.3.4.5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{.id*} with id= {"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'label',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: '.role=admin.firstName=Alex.age=34' }];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{.id} with id=5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'label',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '.5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{.id} with id=[3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'label',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '.3,4,5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{.id} with id= {"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'label',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '.role,admin,firstName,Alex,age,34' }];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+// Matrix style tests
+
+test('Path: /users/{;id*} with id=5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'matrix',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: ';id=5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{;id*} with id=[3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'matrix',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: ';id=3;id=4;id=5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{;id*} with id= {"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'matrix',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: ';role=admin;firstName=Alex;age=34' }];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{;id} with id=5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'matrix',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: ';id=5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{;id} with id=[3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'matrix',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: ';id=3,4,5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Path: /users/{;id} with id= {"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'path',
+    style: 'matrix',
+    explode: false,
+  };
+
+  const expected = [
+    { name: 'id', value: ';id=role,admin,firstName,Alex,age,34' },
+  ];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+//// Query Parameters: Test cases from https://swagger.io/docs/specification/serialization/#query
+
+// Form Tests
+
+test('Query: /users{?id*} with id= 5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'form',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: '5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Query: /users{?id*} with id=[3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'form',
+    explode: true,
+  };
+
+  const expected = [
+    { name: 'id', value: '3' },
+    { name: 'id', value: '4' },
+    { name: 'id', value: '5' },
+  ];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Query: /users{?id*} with id={"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'form',
+    explode: true,
+  };
+
+  const expected = [
+    { name: 'role', value: 'admin' },
+    { name: 'firstName', value: 'Alex' },
+    { name: 'age', value: '34' },
+  ];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Query: /users{?id} with id= 5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'form',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Query: /users{?id} with id=[3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'form',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '3,4,5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Query: /users{?id} with id={"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'form',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: 'role,admin,firstName,Alex,age,34' }];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Query: test that style and explode default correctly (to "form" and "true") when neither is specified for query', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+  };
+
+  const expected = [
+    { name: 'firstName', value: 'Alex' },
+    { name: 'age', value: '34' },
+  ];
+  const actual = createHarParameterObjects(parameter, {
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+// Space Delimited Tests
+// Note: There are less scenarios for this and no special URI Template
+
+test('Query: /users{?id*} with id=[3,4,5], spaceDelimited', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'spaceDelimited',
+    explode: true,
+  };
+
+  const expected = [
+    { name: 'id', value: '3' },
+    { name: 'id', value: '4' },
+    { name: 'id', value: '5' },
+  ];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Query: /users{?id} with id=[3,4,5], spaceDelimited', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'spaceDelimited',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '3 4 5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+// Pipe Delimited Tests
+// Note: There are less scenarios for this and no special URI Template
+
+test('Query: /users{?id*} with id=[3,4,5], pipeDelimited', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'pipeDelimited',
+    explode: true,
+  };
+
+  const expected = [
+    { name: 'id', value: '3' },
+    { name: 'id', value: '4' },
+    { name: 'id', value: '5' },
+  ];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Query: /users{?id} with id=[3,4,5], pipeDelimited', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'pipeDelimited',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '3|4|5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+// DeepObject
+// Spec doesn't say what to do if explode false. We just assume deepOject ignores explode
+// as no alternative serialization is defined when explode is false.
+
+test('Query: deepObject with id={"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'query',
+    style: 'deepObject',
+  };
+
+  const expected = [
+    {
+      name: 'id[role]',
+      value: 'admin',
+    },
+    {
+      name: 'id[firstName]',
+      value: 'Alex',
+    },
+    {
+      name: 'id[age]',
+      value: '34',
+    },
+  ];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+//// Header Parameters https://swagger.io/docs/specification/serialization/#header
+
+test('Header: {id} with X-MyHeader = 5', function (t) {
+  const parameter = {
+    name: 'X-MyHeader',
+    in: 'header',
+    style: 'simple',
+    explode: false,
+  };
+
+  const expected = [{ name: 'X-MyHeader', value: '5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Header: {id} with X-MyHeader = [3,4,5]', function (t) {
+  const parameter = {
+    name: 'X-MyHeader',
+    in: 'header',
+    style: 'simple',
+    explode: false,
+  };
+
+  const expected = [{ name: 'X-MyHeader', value: '3,4,5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Header: {id} with X-MyHeader = {"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'X-MyHeader',
+    in: 'header',
+    style: 'simple',
+    explode: false,
+  };
+
+  const expected = [
+    { name: 'X-MyHeader', value: 'role,admin,firstName,Alex,age,34' },
+  ];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Header: {id*} with X-MyHeader = 5', function (t) {
+  const parameter = {
+    name: 'X-MyHeader',
+    in: 'header',
+    style: 'simple',
+    explode: true,
+  };
+
+  const expected = [{ name: 'X-MyHeader', value: '5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Header: {id*} with X-MyHeader = [3,4,5]', function (t) {
+  const parameter = {
+    name: 'X-MyHeader',
+    in: 'header',
+    style: 'simple',
+    explode: true,
+  };
+
+  const expected = [{ name: 'X-MyHeader', value: '3,4,5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Header: {id*} with X-MyHeader = {"role": "admin", "firstName": "Alex", "age": 34}', function (t) {
+  const parameter = {
+    name: 'X-MyHeader',
+    in: 'header',
+    style: 'simple',
+    explode: true,
+  };
+
+  const expected = [
+    { name: 'X-MyHeader', value: 'role=admin,firstName=Alex,age=34' },
+  ];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Header: Test that style and explode default to simple/false when not provided', function (t) {
+  const parameter = {
+    name: 'X-MyHeader',
+    in: 'header',
+  };
+
+  const expected = [
+    { name: 'X-MyHeader', value: 'role,admin,firstName,Alex,age,34' },
+  ];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+//// Cookie Parameters https://swagger.io/docs/specification/serialization/#cookie
+
+test("Cookie: Test that it doesn't throw an error if style and explode are missing", function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'cookie',
+  };
+
+  let expected = [{ name: 'id', value: '5' }];
+  let actual = createHarParameterObjects(parameter, 5);
+
+  t.deepEqual(actual, expected);
+
+  // At the time of writing the spec doesn't actually show any test cases for exploded arrays or objects
+  // so I assume they are not "legal"
+
+  t.end();
+});
+
+test('Cookie: id = 5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'cookie',
+    style: 'form',
+    explode: true,
+  };
+
+  const expected = [{ name: 'id', value: '5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Cookie: id={id} with id = 5', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'cookie',
+    style: 'form',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '5' }];
+  const actual = createHarParameterObjects(parameter, 5);
+
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Cookie: id={id} with id = [3,4,5]', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'cookie',
+    style: 'form',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: '3,4,5' }];
+  const actual = createHarParameterObjects(parameter, [3, 4, 5]);
+
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+test('Cookie: id={id} with id = {role: "admin", firstName: "Alex", age: 34}', function (t) {
+  const parameter = {
+    name: 'id',
+    in: 'cookie',
+    style: 'form',
+    explode: false,
+  };
+
+  const expected = [{ name: 'id', value: 'role,admin,firstName,Alex,age,34' }];
+  const actual = createHarParameterObjects(parameter, {
+    role: 'admin',
+    firstName: 'Alex',
+    age: 34,
+  });
+
+  t.deepEqual(actual, expected);
+  t.end();
+});
+
+//// More Tests with Snippets
+
+const setParameterValues = function (
+  parameter,
+  value,
+  locationOfParameter,
+  locationOfExample,
+  style,
+  explode
+) {
+  if (typeof style === 'undefined') {
+    delete parameter.style;
+  } else {
+    parameter.style = style;
+  }
+  if (typeof explode === 'undefined') {
+    delete parameter.explode;
+  } else {
+    parameter.explode = explode;
+  }
+  delete parameter.default;
+  delete parameter.example;
+  delete parameter.examples;
+
+  parameter.in = locationOfParameter;
+
+  if (locationOfExample === 'default') {
+    parameter.default = value;
+  } else if (locationOfExample === 'example') {
+    parameter.example = value;
+  } else if (locationOfExample === 'examples') {
+    parameter.examples = {
+      firstExample: {
+        summary: 'This is a summary',
+        value,
+      },
+    };
+  }
+};
+
+/**
+ * The set of options for testing a parameter scenario
+ * @typedef {Object} ParameterOptions
+ * @property {string} api - The API to use for the test
+ * @property {string} path - The path within the API to use for the test
+ * @property {string} method - The method to use on the path
+ * @property {string} in - The location of the parameter: `query`, `path`, `header`
+ * @property {string} parameterName - The name of the parameter to test with
+ * @property {*?} value - The value to assign to either `default`, `example` or the first entry in `examples`
+ * @property {string} locationOfExample - The location of the example value: `default`, `example`, `examples`.
+ * This parameter determines which of these three locations will have the specified `value`. The other
+ * locations will be `undefined`.
+ * @property {string?} style - Optional: The serialization style for the parameter. Only `form` and `simple` are fully supported.
+ * Per the spec: defaults to `form` for `query` and `cookie` params and defaults to `simple` for `path` and `header` params.
+ * @property {boolean?} explode - Optional: Determines if array and object values should be "exploded" into multiple key-value pairs.
+ * Per the spec: defaults to `true` only for `form` parameters. Defaults to `false` for all other styles.
+ * @property {string} expectedString - A string that is expected to be found in the generated `shell_curl`
+ * code snippet for the specified operation/parameter.
+ * @property {Object?} values - Optional: A set of key value pairs to use as parameter values.
+ */
+
+/**
+ *
+ * @param {*} t
+ * @param {ParameterOptions} options - The test scenario
+ */
+const runParameterTest = function (t, options) {
+  const {
+    api,
+    path,
+    method,
+    in: locationOfParameter,
+    parameterName,
+    value,
+    locationOfExample,
+    style,
+    explode,
+    expectedString,
+    values,
+  } = options;
+
+  const apiCopy = JSON.parse(JSON.stringify(api));
+  const parameters = apiCopy.paths[path][method].parameters;
+  const parameter = parameters.find((p) => p.name === parameterName);
+  setParameterValues(
+    parameter,
+    value,
+    locationOfParameter,
+    locationOfExample,
+    style,
+    explode
+  );
+  const result = OpenAPISnippets.getEndpointSnippets(
+    apiCopy,
+    path,
+    method,
+    ['shell_curl'],
+    values
+  );
+  const snippet = result.snippets[0].content;
+
+  // note: the shell_curl snippets uriEncode commas in query parameters (but not path parameters).
+  // So we'll uriEncode and commas that might be in `expectedString`
+
+  const encodedCommaExpectationString =
+    locationOfParameter === 'query'
+      ? expectedString.replaceAll(',', '%2C')
+      : expectedString;
+
+  t.true(
+    snippet.includes(encodedCommaExpectationString),
+    `expected '${encodedCommaExpectationString}' in '${snippet}'`
+  );
+};
+
+const allPetsScenario = {
+  api: ParameterVariationsAPI,
+  path: '/pets',
+  method: 'get',
+  parameterName: 'id',
+};
+
+const singlePetScenario = {
+  api: ParameterVariationsAPI,
+  path: '/pets/{id}',
+  method: 'get',
+  parameterName: 'id',
+};
+
+test('Query parameter with template {?id} with object value', function (t) {
+  const testOptions = Object.assign({}, allPetsScenario, {
+    in: 'query',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    explode: false,
+    locationOfExample: 'default',
+    expectedString: 'id=role%2Cadmin%2CfirstName%2CAlex%2Cage%2C34',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Query parameter with template {?id*} with object value', function (t) {
+  const testOptions = Object.assign({}, allPetsScenario, {
+    in: 'query',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    explode: true,
+    locationOfExample: 'default',
+    expectedString: 'role=admin&firstName=Alex&age=34',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Query parameter with template {?id} with array value', function (t) {
+  const testOptions = Object.assign({}, allPetsScenario, {
+    in: 'query',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: false,
+    locationOfExample: 'default',
+    expectedString: 'id=3%2C4%2C5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Query parameter with template {?id*} with array value', function (t) {
+  const testOptions = Object.assign({}, allPetsScenario, {
+    in: 'query',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: true,
+    locationOfExample: 'default',
+    expectedString: 'id=3&id=4&id=5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Query parameter with with spaceDelimited style array value', function (t) {
+  const testOptions = Object.assign({}, allPetsScenario, {
+    in: 'query',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    style: 'spaceDelimited',
+    explode: false,
+    locationOfExample: 'default',
+    expectedString: 'id=3%204%205',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Query parameter with pipeDelimited array value', function (t) {
+  const testOptions = Object.assign({}, allPetsScenario, {
+    in: 'query',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    style: 'pipeDelimited',
+    explode: false,
+    locationOfExample: 'default',
+    expectedString: 'id=3%7C4%7C5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{id} with object value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    explode: false,
+    locationOfExample: 'example',
+    expectedString: '/pets/role,admin,firstName,Alex,age,34',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{id*} with object value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    explode: true,
+    locationOfExample: 'example',
+    expectedString: '/pets/role=admin,firstName=Alex,age=34',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{id} with array value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: false,
+    locationOfExample: 'example',
+    expectedString: 'pets/3,4,5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{id*} with array value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: true,
+    locationOfExample: 'example',
+    expectedString: 'pets/3,4,5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{.id} with primitive value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: 5,
+    style: 'label',
+    explode: false,
+    locationOfExample: 'example',
+    expectedString: '/pets/.5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{.id*} with primitive value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: 5,
+    explode: true,
+    style: 'label',
+    locationOfExample: 'example',
+    expectedString: '/pets/.5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+test('Path parameter with template /pets/{.id} with object value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    style: 'label',
+    explode: false,
+    locationOfExample: 'example',
+    expectedString: '/pets/.role,admin,firstName,Alex,age,34',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{.id*} with object value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    explode: true,
+    style: 'label',
+    locationOfExample: 'example',
+    expectedString: '/pets/.role=admin.firstName=Alex.age=34',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{.id} with array value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: false,
+    style: 'label',
+    locationOfExample: 'example',
+    expectedString: 'pets/.3,4,5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{.id*} with array value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: true,
+    style: 'label',
+    locationOfExample: 'example',
+    expectedString: 'pets/.3.4.5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{;id} with primitive value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: 5,
+    style: 'matrix',
+    explode: false,
+    locationOfExample: 'example',
+    expectedString: '/pets/;id=5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{;id*} with primitive value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: 5,
+    explode: true,
+    style: 'matrix',
+    locationOfExample: 'example',
+    expectedString: '/pets/;id=5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+test('Path parameter with template /pets/{;id} with object value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    style: 'matrix',
+    explode: false,
+    locationOfExample: 'example',
+    expectedString: '/pets/;id=role,admin,firstName,Alex,age,34',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{;id*} with object value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    explode: true,
+    style: 'matrix',
+    locationOfExample: 'example',
+    expectedString: '/pets/;role=admin;firstName=Alex;age=34',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{;id} with array value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: false,
+    style: 'matrix',
+    locationOfExample: 'example',
+    expectedString: 'pets/;id=3,4,5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with template /pets/{;id*} with array value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: true,
+    style: 'matrix',
+    locationOfExample: 'example',
+    expectedString: 'pets/;id=3;id=4;id=5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Header parameter with template {id} with object value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'header',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    explode: false,
+    locationOfExample: 'example',
+    expectedString: "--header 'id: role,admin,firstName,Alex,age,34'",
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Header parameter with template {id*} with object value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'header',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    explode: true,
+    locationOfExample: 'example',
+    expectedString: "--header 'id: role=admin,firstName=Alex,age=34'",
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Header parameter with template {id} with array value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'header',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: false,
+    locationOfExample: 'example',
+    expectedString: "--header 'id: 3,4,5'",
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Header parameter with template {id*} with array value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'header',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: true,
+    locationOfExample: 'example',
+    expectedString: "--header 'id: 3,4,5'",
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Query parameter with sample given by examples key', function (t) {
+  const testOptions = Object.assign({}, allPetsScenario, {
+    in: 'query',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    locationOfExample: 'examples',
+    expectedString: 'id=3&id=4&id=5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Path parameter with sample given by examples key', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'path',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    locationOfExample: 'examples',
+    expectedString: '/pets/3,4,5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Header parameter with sample given by examples key', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'header',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    locationOfExample: 'examples',
+    expectedString: "--header 'id: 3,4,5'",
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Header parameter defined in operation overrides header parameter of same name in path', function (t) {
+  const result = OpenAPISnippets.getEndpointSnippets(
+    ParameterVariationsAPI,
+    '/pets/{id}',
+    'get',
+    ['shell_curl']
+  );
+  const snippet = result.snippets[0].content;
+  t.match(snippet, /--header 'X-MYHEADER: SOME_STRING_VALUE'/);
+  t.end();
+});
+
+test('Path parameter defined in operation overrides header parameter of same name in path', function (t) {
+  const result = OpenAPISnippets.getEndpointSnippets(
+    ParameterVariationsAPI,
+    '/pets/{id}',
+    'get',
+    ['shell_curl']
+  );
+  const snippet = result.snippets[0].content;
+  t.match(snippet, /\/pets\/role,admin,firstName,Alex,age,34/);
+  t.end();
+});
+
+test('Header parameter defined in operation (not in path) object', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'header',
+    parameterName: 'X-MYHEADER',
+    value: [3, 4, 5],
+    locationOfExample: 'examples',
+    expectedString: "--header 'X-MYHEADER: 3,4,5'",
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Cookie parameter with explode = true', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'cookie',
+    parameterName: 'id',
+    value: 5,
+    explode: true,
+    locationOfExample: 'example',
+    expectedString: '--cookie id=5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Cookie parameter with template id={id} with primitive value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'cookie',
+    parameterName: 'id',
+    value: 5,
+    explode: false,
+    locationOfExample: 'examples',
+    expectedString: '--cookie id=5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Cookie parameter with template id={id} with object value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'cookie',
+    parameterName: 'id',
+    value: {
+      role: 'admin',
+      firstName: 'Alex',
+      age: 34,
+    },
+    explode: false,
+    locationOfExample: 'default',
+    expectedString: '--cookie id=role%2Cadmin%2CfirstName%2CAlex%2Cage%2C34',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('Cookie parameter with template id={id} with array value', function (t) {
+  const testOptions = Object.assign({}, singlePetScenario, {
+    in: 'cookie',
+    parameterName: 'id',
+    value: [3, 4, 5],
+    explode: false,
+    locationOfExample: 'example',
+    expectedString: '--cookie id=3%2C4%2C5',
+  });
+  runParameterTest(t, testOptions);
+  t.end();
+});
+
+test('A reference in an examples object is resolved', function (t) {
+  const result = OpenAPISnippets.getEndpointSnippets(
+    ParameterVariationsAPI,
+    '/animals',
+    'get',
+    ['shell_curl']
+  );
+
+  const snippet = result.snippets[0].content;
+  t.match(snippet, /tags=dog%2Ccat/);
   t.end();
 });

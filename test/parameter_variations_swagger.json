@@ -1,0 +1,387 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "version": "1.0.0",
+        "title": "Swagger Petstore",
+        "description": "A sample API that uses a petstore as an example to demonstrate features in the OpenAPI 3.0 specification",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "Swagger API Team",
+            "email": "apiteam@swagger.io",
+            "url": "http://swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
+        }
+    },
+    "servers": [
+        {
+            "url": "http://petstore.swagger.io/api"
+        }
+    ],
+    "paths": {
+        "/pets": {
+            "get": {
+                "description": "Get Pets from store",
+                "operationId": "getPet",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "explode": false,
+                        "example": {
+                            "role": "admin",
+                            "firstName": "Alex",
+                            "age": 34
+                        },
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    {
+                        "name": "tags",
+                        "in": "query",
+                        "description": "tags to filter by",
+                        "required": false,
+                        "style": "form",
+                        "explode": false,
+                        "example": [
+                            "dog",
+                            "cat"
+                        ],
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "maximum number of results to return",
+                        "example": 10,
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "pet response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Pet"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/pets/{id}": {
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "explode": false,
+                    "schema": {
+                        "type": "integer"
+                    }
+                },
+                {
+                    "name": "X-MYHEADER",
+                    "in": "header",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "get": {
+                "description": "Get Pets from store",
+                "operationId": "getPet",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "explode": false,
+                        "example": {
+                            "role": "admin",
+                            "firstName": "Alex",
+                            "age": 34
+                        },
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    {
+                        "name": "X-MYHEADER",
+                        "in": "header",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tags",
+                        "in": "query",
+                        "description": "tags to filter by",
+                        "required": false,
+                        "style": "form",
+                        "explode": false,
+                        "example": [
+                            "dog",
+                            "cat"
+                        ],
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "maximum number of results to return",
+                        "example": 10,
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "pet response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Pet"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/animals": {
+            "parameters": [
+                {
+                    "name": "tags",
+                    "in": "query",
+                    "description": "tags to filter by",
+                    "required": false,
+                    "style": "form",
+                    "explode": false,
+                    "examples": {
+                        "firstExample": {
+                            "$ref": "#/components/examples/firstExample"
+                        }
+                    },
+                    "schema": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                {
+                    "name": "limit",
+                    "in": "query",
+                    "description": "maximum number of results to return",
+                    "example": 10,
+                    "required": false,
+                    "schema": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            ],
+            "get": {
+                "description": "Get Pets from store",
+                "operationId": "getPet",
+                "responses": {
+                    "200": {
+                        "description": "pet response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Pet"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/species": {
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "query",
+                    "description": "the species id",
+                    "required": false,
+                    "example": 1,
+                    "schema": {
+                        "type": "integer"
+                    }
+                }
+            ],
+            "get": {
+                "description": "Get Pets from store",
+                "operationId": "getPet",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "A comma-seperated list of species IDs",
+                        "required": false,
+                        "explode": false,
+                        "example": [
+                            1,
+                            2
+                        ],
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "pet response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Species"
+                                }
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "unexpected error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "examples": {
+            "firstExample": {
+                "summary": "A first example",
+                "value": [
+                    "dog",
+                    "cat"
+                ]
+            }
+        },
+        "schemas": {
+            "Pet": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/NewPet"
+                    },
+                    {
+                        "required": [
+                            "id"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "format": "int64"
+                            }
+                        }
+                    }
+                ]
+            },
+            "NewPet": {
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "tag": {
+                        "type": "string"
+                    }
+                }
+            },
+            "Species": {
+                "items": {
+                    "$ref": "#/components/thing"
+                },
+                "type": "array"
+            },
+            "Thing": {
+                "required": [
+                    "id"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "Error": {
+                "required": [
+                    "code",
+                    "message"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "message": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}
