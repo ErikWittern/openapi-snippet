@@ -1,6 +1,6 @@
 {
   "name": "openapi-snippet",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Generates code snippets from Open API (previously Swagger) documents.",
   "repository": {
     "type": "git",
@@ -26,7 +26,7 @@
   "devDependencies": {
     "browserify": "^16.2.3",
     "prettier": "2.3.0",
-    "tap-spec": "^2.2.2",
+    "tap-spec": "^5.0.0",
     "tape": "^4.10.1",
     "uglifyify": "^5.0.2"
   }
