@@ -437,8 +437,20 @@ const getBaseUrl = function (openApi, path, method) {
  * @return {HarParameterObject[]} Array of objects describing the parameters in a given OpenAPI method or path
  */
 const getParameterValues = function (openApi, param, location, values) {
+  var type = (param.type || (param.schema && param.schema.type));
+
+  if (typeof type === 'undefined') {
+    type = "ANY"
+  } else if (typeof type !== 'string') {
+    // While this is an error and it'll get by the openapi-snippet
+    // generator, any openapi validator should flag this error where
+    // typeof type is not 'string'.
+    type = "ERROR"
+  } else {
+    type = type.toUpperCase()
+  }
   let value =
-    'SOME_' + (param.type || param.schema.type).toUpperCase() + '_VALUE';
+    'SOME_' + type + '_VALUE';
   if (location === 'path') {
     // then default to the original place holder value (e.b. '{id}')
     value = `{${param.name}}`;
@@ -500,10 +512,6 @@ const parseParametersToQuery = function (
         /^#/.test(param.schema['$ref'])
       ) {
         param.schema = resolveRef(openApi, param.schema['$ref']);
-        if (typeof param.schema.type === 'undefined') {
-          // many schemas don't have an explicit type
-          param.schema.type = 'object';
-        }
       }
     }
     if (
