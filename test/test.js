@@ -186,7 +186,7 @@ test('Parameters that are Schema References Are Dereferenced', function (t) {
     ['node_request']
   );
   const snippet = result.snippets[0].content;
-  t.true(/pet: 'SOME_OBJECT_VALUE'/.test(snippet));
+  t.true(/pet: 'SOME_ANY_VALUE'/.test(snippet));
   t.end();
 });
 
@@ -1712,5 +1712,31 @@ test('A reference in an examples object is resolved', function (t) {
 
   const snippet = result.snippets[0].content;
   t.match(snippet, /tags=dog%2Ccat/);
+  t.end();
+});
+
+test('A parameter without an explicit type is assigned the Any Type', function (t) {
+  const result = OpenAPISnippets.getEndpointSnippets(
+    ParameterVariationsAPI,
+    '/pets',
+    'get',
+    ['shell_curl']
+  );
+
+  const snippet = result.snippets[0].content;
+  t.match(snippet, /noType=SOME_ANY_VALUE/);
+  t.end();
+});
+
+test('A parameter with a type that is not a string value (like "boolean" or "object") is an error', function (t) {
+  const result = OpenAPISnippets.getEndpointSnippets(
+    ParameterVariationsAPI,
+    '/pets',
+    'get',
+    ['shell_curl']
+  );
+
+  const snippet = result.snippets[0].content;
+  t.match(snippet, /typeNotAString=SOME_ERROR_VALUE/);
   t.end();
 });

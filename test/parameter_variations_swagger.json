@@ -67,6 +67,16 @@
                             "type": "integer",
                             "format": "int32"
                         }
+                    },
+                    {
+                        "name": "noType",
+                        "description": "can be any type",
+                        "in": "query"
+                    },
+                    {
+                        "name": "typeNotAString",
+                        "type": 35,
+                        "in": "query"
                     }
                 ],
                 "responses": {
