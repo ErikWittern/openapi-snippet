@@ -227,8 +227,8 @@ const createHarParameterObjects = function (
   }
 
   const objects = [];
-  style = style ?? getDefaultStyleForLocation(location);
-  explode = explode ?? getDefaultExplodeForStyle(style);
+  style = (style !== null && style !== undefined) ? style : getDefaultStyleForLocation(location);
+  explode = (explode !== null && explode !== undefined) ? explode : getDefaultExplodeForStyle(style);
 
   if (location === 'query' || location === 'cookie') {
     const separator = getArrayElementSeparator(style);
