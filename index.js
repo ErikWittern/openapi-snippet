@@ -20,15 +20,19 @@ const HTTPSnippet = require('httpsnippet');
  * @param {string} method   HTTP method identifying endpoint, e.g., 'get'
  * @param {array} targets   List of languages to create snippets in, e.g,
  *                          ['cURL', 'Node']
- * @param {object} values   Optional: Values for the query parameters if present
+ * @param {object} parameterValues   Optional: Values for the parameters if present
+ * @param {object} requestBodyValues Optional: Values for the request body if present
  */
-const getEndpointSnippets = function (openApi, path, method, targets, values) {
+const getEndpointSnippets = function (openApi, path, method, targets, parameterValues, requestBodyValues) {
   // if optional parameter is not provided, set it to empty object
-  if (typeof values === 'undefined') {
-    values = {};
+  if (typeof parameterValues === 'undefined') {
+    parameterValues = {};
+  }
+  if (typeof requestBodyValues === 'undefined') {
+    requestBodyValues = {};
   }
 
-  const hars = OpenAPIToHar.getEndpoint(openApi, path, method, values);
+  const hars = OpenAPIToHar.getEndpoint(openApi, path, method, parameterValues, requestBodyValues);
 
   const snippets = [];
   for (const har of hars) {

@@ -121,6 +121,23 @@ test('Testing optionally provided parameter values', function (t) {
   t.false(/not-a-query-param/.test(result.snippets[0].content));
 });
 
+test('Testing optionally provided parameter values in path and query', function (t) {
+  t.plan(2);
+  // checks the 'Pages' schema...
+  const result = OpenAPISnippets.getEndpointSnippets(
+    InstagramOpenAPI,
+    '/geographies/{geo-id}/media/recent',
+    'get',
+    ['node_request'],
+    {
+      'geo-id': 'geo-id-xxx',
+      'count': 1024,
+    }
+  );
+  t.true(/geo-id-xxx/.test(result.snippets[0].content));
+  t.true(/1024/.test(result.snippets[0].content));
+});
+
 test('Testing the case when default is present but a value is provided, use the provided value', function (t) {
   t.plan(2);
   // checks the 'Pages' schema...
@@ -209,12 +226,17 @@ test('Generate snippet with multipart/form-data', function (t) {
     FormDataExampleReferenceAPI,
     '/pets',
     'patch',
-    ['node_request']
+    ['node_request'],
+    {},
+    {
+      'pet[name]': 'happy',
+      'pet[tag]': 'puppy'
+    }
   );
   const snippet = result.snippets[0].content;
   t.true(/boundary=---011000010111000001101001/.test(snippet));
   t.true(
-    /formData: {'pet\[name\]': 'string', 'pet\[tag\]': 'string'}/.test(snippet)
+    /formData: {'pet\[name\]': 'happy', 'pet\[tag\]': 'puppy'}/.test(snippet)
   );
   t.end();
 });
