@@ -27,24 +27,28 @@ const OpenAPISampler = require('openapi-sampler');
  * @param  {Object} openApi           OpenAPI document
  * @param  {string} path              Key of the path
  * @param  {string} method            Key of the method
- * @param  {Object} queryParamValues  Optional: Values for the query parameters if present
+ * @param  {Object} paramValues  Optional: Values for the parameters if present
+ * @param {object} requestBodyValues Optional: Values for the request body if present
  * @return {array}                    List of HAR Request objects for the endpoint
  */
-const createHar = function (openApi, path, method, queryParamValues) {
+const createHar = function (openApi, path, method, paramValues, requestBodyValues) {
   // if the operational parameter is not provided, set it to empty object
-  if (typeof queryParamValues === 'undefined') {
-    queryParamValues = {};
+  if (typeof paramValues === 'undefined') {
+    paramValues = {};
+  }
+  if (typeof requestBodyValues === 'undefined') {
+    requestBodyValues = {};
   }
 
   const baseUrl = getBaseUrl(openApi, path, method);
 
   const baseHar = {
     method: method.toUpperCase(),
-    url: baseUrl + getFullPath(openApi, path, method),
-    headers: getHeadersArray(openApi, path, method),
-    queryString: getQueryStrings(openApi, path, method, queryParamValues),
+    url: baseUrl + getFullPath(openApi, path, method, paramValues),
+    headers: getHeadersArray(openApi, path, method, paramValues),
+    queryString: getQueryStrings(openApi, path, method, paramValues),
     httpVersion: 'HTTP/1.1',
-    cookies: getCookies(openApi, path, method),
+    cookies: getCookies(openApi, path, method, paramValues),
     headersSize: 0,
     bodySize: 0,
   };
@@ -52,7 +56,7 @@ const createHar = function (openApi, path, method, queryParamValues) {
   let hars = [];
 
   // get payload data, if available:
-  const postDatas = getPayloads(openApi, path, method);
+  const postDatas = getPayloads(openApi, path, method, requestBodyValues);
 
   // For each postData create a snippet
   if (postDatas.length > 0) {
@@ -297,9 +301,14 @@ const createHarParameterObjects = function (
  * @param  {object} openApi
  * @param  {string} path
  * @param  {string} method
+ * @param {object} requestBodyValues Optional: Values for the request body if present
  * @return {array}  A list of payload objects
  */
-const getPayloads = function (openApi, path, method) {
+const getPayloads = function (openApi, path, method, requestBodyValues) {
+  // If requestBodyValues is not defined, set it to an empty object
+  if (typeof requestBodyValues === 'undefined') {
+    requestBodyValues = {};
+  }
   if (typeof openApi.paths[path][method].parameters !== 'undefined') {
     for (let i in openApi.paths[path][method].parameters) {
       const param = openApi.paths[path][method].parameters[i];
@@ -355,6 +364,13 @@ const getPayloads = function (openApi, path, method) {
           { skipReadOnly: true },
           openApi
         );
+        // fill the sample with the provided values from the request body values
+        for (const name in requestBodyValues) {
+          const value = requestBodyValues[name];
+          if (value) {
+            sample[name] = value;
+          }
+        }
         if (type === 'application/json') {
           payloads.push({
             mimeType: type,
@@ -609,16 +625,21 @@ const getQueryStrings = function (openApi, path, method, values) {
  * @param  {Object} openApi OpenApi document
  * @param  {string} path    Key of the path
  * @param  {string} method  Key of the method
+ * @param  {Object} paramValues  Optional: Values for the parameters if present
  * @return {string}         Full path including example values
  */
-const getFullPath = function (openApi, path, method) {
+const getFullPath = function (openApi, path, method, paramValues) {
   let fullPath = path;
-
+  // if the operational parameter is not provided, set it to empty object
+  if (typeof paramValues === undefined) {
+    paramValues = {};
+  }
   const pathParameters = getParameterCollectionIn(
     openApi,
     path,
     method,
-    'path'
+    'path',
+    paramValues
   );
   pathParameters.forEach(({ name, value }) => {
     fullPath = fullPath.replace('{' + name + '}', value);
@@ -633,9 +654,14 @@ const getFullPath = function (openApi, path, method) {
  * @param  {Object} openApi OpenAPI document
  * @param  {string} path    Key of the path
  * @param  {string} method  Key of the method
+ * @param  {Object} paramValues  Optional: Values for the parameters if present
  */
-const getCookies = function (openApi, path, method) {
-  return getParameterCollectionIn(openApi, path, method, 'cookie');
+const getCookies = function (openApi, path, method, paramValues) {
+    // if the operational parameter is not provided, set it to empty object
+    if (typeof paramValues === 'undefined') {
+      paramValues = {};
+    }
+  return getParameterCollectionIn(openApi, path, method, 'cookie', paramValues);
 };
 
 /**
@@ -645,11 +671,16 @@ const getCookies = function (openApi, path, method) {
  * @param  {Object} openApi OpenAPI document
  * @param  {string} path    Key of the path
  * @param  {string} method  Key of the method
+ * @param  {Object} paramValues  Optional: Values for the parameters if present
  * @return {HarParameterObject[]} List of objects describing the header
  */
-const getHeadersArray = function (openApi, path, method) {
+const getHeadersArray = function (openApi, path, method, paramValues) {
   const headers = [];
   const pathObj = openApi.paths[path][method];
+  // if the operational parameter is not provided, set it to empty object
+  if (typeof paramValues === 'undefined') {
+    paramValues = {};
+  }
 
   // 'accept' header:
   if (typeof pathObj.consumes !== 'undefined') {
@@ -663,7 +694,7 @@ const getHeadersArray = function (openApi, path, method) {
   }
 
   // headers defined in path object:
-  headers.push(...getParameterCollectionIn(openApi, path, method, 'header'));
+  headers.push(...getParameterCollectionIn(openApi, path, method, 'header', paramValues));
 
   // security:
   let basicAuthDef;
