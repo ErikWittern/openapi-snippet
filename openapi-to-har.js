@@ -407,10 +407,10 @@ const getPayloads = function (openApi, path, method) {
  * @return {string}         Base URL
  */
 const getBaseUrl = function (openApi, path, method) {
-  if (openApi.paths[path][method].servers)
+  if (openApi.paths[path][method].servers && openApi.paths[path][method].servers.length > 0)
     return openApi.paths[path][method].servers[0].url;
-  if (openApi.paths[path].servers) return openApi.paths[path].servers[0].url;
-  if (openApi.servers) return openApi.servers[0].url;
+  if (openApi.paths[path].servers && openApi.paths[path].servers.length > 0) return openApi.paths[path].servers[0].url;
+  if (openApi.servers && openApi.servers.length > 0) return openApi.servers[0].url;
 
   let baseUrl = '';
   if (typeof openApi.schemes !== 'undefined') {
